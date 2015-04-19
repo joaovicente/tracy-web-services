@@ -1,7 +1,12 @@
+# Generated files
 *.class
+target/
+logs/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+#Eclipse
+.classpath
+.project
+.settings/
 
 # Package Files #
 *.jar

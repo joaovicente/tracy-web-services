@@ -46,6 +46,11 @@
       <artifactId>camel-jackson</artifactId>
       <version>2.15.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-elasticsearch</artifactId>
+      <version>2.15.1</version>
+    </dependency>
 
     <!-- Spring Web -->
     <dependency>

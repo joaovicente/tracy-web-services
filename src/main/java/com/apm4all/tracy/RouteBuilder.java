@@ -49,7 +49,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 //		    "label": "manual"
 //		}
 		from("seda:storeTracy")
-			// TODO: Store Tracy frames in repository
+			// Store Tracy frames in repository
 			.process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {

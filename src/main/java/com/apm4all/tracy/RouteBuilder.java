@@ -8,6 +8,7 @@ import org.apache.camel.component.restlet.RestletConstants;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.spring.SpringRouteBuilder;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.restlet.Response;
 import org.restlet.data.Status;
 
@@ -59,8 +60,10 @@ public class RouteBuilder extends SpringRouteBuilder {
 					
 					// "_id": "<taskId>_<optId>",
 					exchange.getOut().setHeader("indexId", indexId);
-
-					// "@timestamp": "2015-03-10T23:33:27.707Z",
+					
+					//TODO: Move  DateTimeZone.setDefault(DateTimeZone.UTC); to where it is only called once
+					DateTimeZone.setDefault(DateTimeZone.UTC);
+					// "@timestamp": "2015-03-10T23:33:27.707",
 					Long msecBefore = (Long) tracyMap.get("msecBefore");
 					DateTime dateTime = new DateTime(msecBefore);
 					String timestamp = dateTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");

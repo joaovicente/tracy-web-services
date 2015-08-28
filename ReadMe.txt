@@ -11,6 +11,9 @@ favorite web container or just run
 
     mvn jetty:run
 
+You can specify JVM settings as follows
+    export MAVEN_OPTS="-Xms1024m -Xmx10240m -XX:PermSize=256m -XX:MaxPermSize=1024m" && mvn jetty:run
+
 to start up and deploy to Jetty.
 
 If you have JBoss AS running you can deploy using

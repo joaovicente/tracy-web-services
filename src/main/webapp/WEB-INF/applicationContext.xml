@@ -12,6 +12,9 @@
 	<!-- a bean for taskMeasurement services -->
 	<bean id="taskMeasurementService" class="com.apm4all.tracy.TaskMeasurementService" />
 
+	<!-- a bean for taskMeasurement services -->
+	<bean id="applicationsService" class="com.apm4all.tracy.ApplicationsService" />
+	
     <!-- Camel Context -->     
     <camelContext xmlns="http://camel.apache.org/schema/spring">
       <camel:routeBuilder ref="routeBuilder"/>   

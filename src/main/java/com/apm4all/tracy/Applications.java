@@ -1,57 +1,64 @@
 package com.apm4all.tracy;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+//{
+//	  "applications": [
+//	    {
+//	      "name": "Demo App",
+//	      "type": "application",
+//	      "children": [
+//	        {
+//	          "name": "bursty",
+//	          "type": "task"
+//	        },
+//	        {
+//	          "name": "Not so fast",
+//	          "type": "task"
+//	        }
+//	      ]
+//	    }
+//	  ]
+//}
+
 
 public class Applications {
-	ArrayList<Application> applicationList = new ArrayList<Application>();
-	
-	public Applications() {
-		Task bursty = new Task("Bursty");
-		Task notSoFast = new Task("Not so fast");
-		Application demoApp = new Application("demoApp");
-		demoApp.addTask(bursty);
-		demoApp.addTask(notSoFast);
-		applicationList.add(demoApp);
-	}
-	
-	public Application[] getApplications() {
-		Application[] a = new Application[applicationList.size()];
-		applicationList.toArray(a);
-		return a;
-	}
-
-	private class Application {
-		String name;
-		private ArrayList<Task> taskList = new  ArrayList<Task>();
+	ArrayList<Object> applications;
+	public Applications()	{
 		
-		public Application(String name)	{
-			this.name = name;
-		}
-		public void addTask(Task task) {
-			taskList.add(task);
-		}
-		@SuppressWarnings("unused")
-		public String getName() {
-			return name;
-		}
-		@SuppressWarnings("unused")
-		public Task[] getTasks() {
-			Task[] t = new Task[taskList.size()];
-			taskList.toArray(t);
-			return t;
-		}
+		// Initialize applications
+		applications = new ArrayList<Object>();
+		
+		// Create demoApp
+		LinkedHashMap<String,Object> demoApp = new LinkedHashMap<String,Object>();
+		demoApp.put("name", "Demo App");
+		demoApp.put("type", "application");
+		
+		// Now create demoAppTasks
+		ArrayList<Object> demoAppTasks = new ArrayList<Object>();
+		
+		// Create bursty and add it to the demoAppTasks list
+		LinkedHashMap<String,Object> bursty = new LinkedHashMap<String,Object>();
+		bursty.put("name", "bursty");
+		bursty.put("type", "task");
+		demoAppTasks.add(bursty);
+		
+		// Create notSoFast and add it to the demoAppTasks list
+		LinkedHashMap<String,Object> notSoFast = new LinkedHashMap<String,Object>();
+		notSoFast.put("name", "Not so fast");
+		notSoFast.put("type", "task");
+		demoAppTasks.add(notSoFast);
+	
+		// Now set demoAppTasks as children of demoApp
+		demoApp.put("children", demoAppTasks);
+		
+		// Finally add demoApp to applications list
+		applications.add(demoApp);
+		
 	}
 	
-	private class Task {
-		private String name;
-
-		public Task(String name) {
-			this.name = name;
-		}
-
-		@SuppressWarnings("unused")
-		public String getName() {
-			return name;
-		}
+	public ArrayList<Object> getApplications()	{
+		return applications;
 	}
 }

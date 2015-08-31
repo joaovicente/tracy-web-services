@@ -48,7 +48,8 @@ public class RouteBuilder extends SpringRouteBuilder {
         // Notice: This is optional, but needed if the RestRegistry should
         // enlist accurate information. You can access the RestRegistry
         // from JMX at runtime
-        .contextPath("camel-example-servlet-rest-tomcat/rest").port(8080);
+        .contextPath("camel-example-servlet-rest-tomcat/rest").port(8080)
+        .enableCORS(true);
         rest("/v1")
             .consumes("application/json").produces("application/json")
             .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for a Task")
@@ -68,6 +69,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 			.to("seda:tracySegmentProcessor?waitForTaskToComplete=Never")
 			// Return taskId-component as reference with HTTP 202 code (Accepted)
 			.setBody(simple("{\"status\":\"processing\"}"))
+			.setHeader("Access-Control-Allow-Origin", simple("*"))
 			.process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
@@ -78,7 +80,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 		
 		from("seda:tracySegmentProcessor")
 			.unmarshal().json(JsonLibrary.Jackson)
-			.transform().simple("${body[tracySegment]}")
+//			.transform().simple("${body[tracySegment]}")
 			// TODO: Validate tracySegment messages
 			// TODO: Send invalid segments to audit log
 			.split(body())

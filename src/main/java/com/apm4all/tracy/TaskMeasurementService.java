@@ -10,7 +10,14 @@ public class TaskMeasurementService {
      * @return the measurement, or <tt>null</tt> if the application or task are invalid 
      */
     public TaskMeasurement getTaskMeasurement(String application, String task) {
-        return new TaskMeasurement();
+    	TaskMeasurement taskMeasurement = null;
+    	if (task.equals("Not-so-fast"))	{
+    		taskMeasurement = new NotSoFastTaskMeasurement(application, task);
+    	}
+    	else if (task.equals("Static"))	{
+    		taskMeasurement = new StaticTaskMeasurement(application, task);
+    	}
+    	return taskMeasurement;
     }
 	
 }

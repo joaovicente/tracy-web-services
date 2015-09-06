@@ -30,6 +30,12 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     			));
     	
     	// Vitals Timechart
+    	vitalsTimechart.setTimeSequence(Arrays.asList(new Long[]
+    			{1439312400000L,1439312401900L,1439312403800L,1439312405700L,
+    			1439312407600L,1439312409500L,1439312411400L,1439312413300L,
+    			1439312415200L,1439312417100L,1439312419000L,1439312420900L,
+    			1439312422800L,1439312424700L,1439312426600L,1439312428500L}
+    			));
     	vitalsTimechart.setCount(Arrays.asList(new Integer[]
     			 {200,243,254,234,253,265,245,247,765,243,265,273,247,256,236,245}
     	));

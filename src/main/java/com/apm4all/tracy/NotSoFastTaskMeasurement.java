@@ -20,8 +20,8 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
     private void notSoFast()	{
     	//long snap = 60000 * 15; // in msec (15 minutes) 
     	//long span = 60000 * 60 * 4; // in msec (4 hours) 
-    	long snap = 1000; // 10 second
-    	long span = 30000; // 60 seconds
+    	long snap = 1000; // 1 second
+    	long span = 30000; // 30 seconds
     	
     	// Establish current time
     	long now = System.currentTimeMillis();

@@ -21,7 +21,7 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
     	//long snap = 60000 * 15; // in msec (15 minutes) 
     	//long span = 60000 * 60 * 4; // in msec (4 hours) 
     	long snap = 1000; // 1 second
-    	long span = 30000; // 30 seconds
+    	long span = 16000; // 30 seconds
     	
     	// Establish current time
     	long now = System.currentTimeMillis();
@@ -38,12 +38,24 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
     }
     
 	private int removeOlderMetrics(long startTime) {
-		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
-		for (int i = 0; i < timeSequence.size(); i++) {
-			if (timeSequence.get(i) < startTime)	{
-				singleApdexTimechart.trimLeft(1);
-                vitalsTimechart.trimLeft(1);
+//		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
+		int numItemsToRemove = 0;
+//		System.out.println("singleApdexTimechart (pre-removal) size = " +  singleApdexTimechart.getTimeSequence().size());
+		for (int i = 0; i < singleApdexTimechart.getTimeSequence().size(); i++) {
+			if (singleApdexTimechart.getTimeSequence().get(i) < startTime)	{
+//				System.out.println("singleApdexTimechart sch4removal " + singleApdexTimechart.getTimeSequence().get(i));
+				numItemsToRemove++;
 			}
+			else	{
+//				System.out.println("singleApdexTimechart NOT sch4removal " + singleApdexTimechart.getTimeSequence().get(i));
+			}
+		}
+//		System.out.println("singleApdexTimechart removing " +  numItemsToRemove);
+		while(numItemsToRemove > 0)	{
+//			System.out.println("singleApdexTimechart removing " + singleApdexTimechart.getTimeSequence().get(0));
+			singleApdexTimechart.trimLeft(1);
+            vitalsTimechart.trimLeft(1);
+			numItemsToRemove--;
 		}
 		return 0;
 	}
@@ -65,13 +77,16 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 	private void appendTimechartMetrics(long startTime, long endTime, long snap) {
 		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
 		
-//		System.out.println("startTime=" + startTime + ", endTime=" + endTime + ", snap=" + snap);
+		System.out.println("singleApdexTimechart startTime=" + startTime + ", endTime=" + endTime + ", snap=" + snap);
 		// Add APDEX scores for missing buckets within range
 		for (long i = startTime ; i < endTime ; i+=snap)	{
 			// Add only timeSequence data not yet populated 
-			if ( (timeSequence.size() > 0 
-					&& i > timeSequence.get(timeSequence.size()-1))
-					|| timeSequence.size() == 0)	{
+			if ( (timeSequence.size() > 0 // timeSequence has data AND i is higher than last timeSequence
+					&& i > timeSequence.get(timeSequence.size()-1)) 
+					|| timeSequence.size() == 0)	{ // OR if timeSequence empty
+				
+				
+				System.out.println("singleApdexTimechart adding i=" + i);
 				// APDEX score
 				timeSequence.add(i);
 				// apdexScore to be random value between POOR and FAIR
@@ -86,6 +101,8 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 			}
 			
 		}
+		System.out.println("singleApdexTimechart size =" +  timeSequence.size());
+		
 	}
 	
     private void appendLatencyHistogram(long startTime, long endTime, long snap) {

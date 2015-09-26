@@ -14,5 +14,4 @@ public class NotSoFastTaskMeasurementTest {
     	System.out.println("LatencyHistogram count: " + taskMeasurement.getLatencyHistogram().getCount());
     	assertEquals(17, taskMeasurement.getLatencyHistogram().getBins().size());
 	}
-
 }

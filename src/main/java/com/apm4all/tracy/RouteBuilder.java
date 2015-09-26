@@ -96,35 +96,35 @@ public class RouteBuilder extends SpringRouteBuilder {
 //		    "component":"webapp1",
 //		    "label": "manual"
 //		}
-		from("seda:storeTracy")
-			// Store Tracy frames in repository
-			.process(new Processor()	{
-				@Override
-				public void process(Exchange exchange) throws Exception {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> tracyMap = (Map<String, Object>) exchange.getIn().getBody();
-					String indexId = tracyMap.get("taskId") + "_" + tracyMap.get("optId");
-					
-					// "_id": "<taskId>_<optId>",
-					exchange.getOut().setHeader("indexId", indexId);
-					
-					//TODO: Move  DateTimeZone.setDefault(DateTimeZone.UTC); to where it is only called once
-					DateTimeZone.setDefault(DateTimeZone.UTC);
-					// "@timestamp": "2015-03-10T23:33:27.707",
-					Long msecBefore = (Long) tracyMap.get("msecBefore");
-					DateTime dateTime = new DateTime(msecBefore);
-					String timestamp = dateTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
-					tracyMap.put("@timestamp", timestamp);
-					
-					// "_index": "tracy-2015.03.10",
-					String index = "tracy" + "-" + dateTime.toString("yyyy.MM.dd");
-					
-		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME, index);
-		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE, "taskType1");
-					
-					exchange.getOut().setBody(tracyMap);
-				}
-			})
-			.to("elasticsearch://local?operation=INDEX");
+//		from("seda:storeTracy")
+//			// Store Tracy frames in repository
+//			.process(new Processor()	{
+//				@Override
+//				public void process(Exchange exchange) throws Exception {
+//					@SuppressWarnings("unchecked")
+//					Map<String, Object> tracyMap = (Map<String, Object>) exchange.getIn().getBody();
+//					String indexId = tracyMap.get("taskId") + "_" + tracyMap.get("optId");
+//					
+//					// "_id": "<taskId>_<optId>",
+//					exchange.getOut().setHeader("indexId", indexId);
+//					
+//					//TODO: Move  DateTimeZone.setDefault(DateTimeZone.UTC); to where it is only called once
+//					DateTimeZone.setDefault(DateTimeZone.UTC);
+//					// "@timestamp": "2015-03-10T23:33:27.707",
+//					Long msecBefore = (Long) tracyMap.get("msecBefore");
+//					DateTime dateTime = new DateTime(msecBefore);
+//					String timestamp = dateTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
+//					tracyMap.put("@timestamp", timestamp);
+//					
+//					// "_index": "tracy-2015.03.10",
+//					String index = "tracy" + "-" + dateTime.toString("yyyy.MM.dd");
+//					
+//		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME, index);
+//		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE, "taskType1");
+//					
+//					exchange.getOut().setBody(tracyMap);
+//				}
+//			})
+//			.to("elasticsearch://local?operation=INDEX");
 	}
 }

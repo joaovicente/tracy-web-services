@@ -31,31 +31,28 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 	private final int TOLERATING_LOWER_BIN = 12;
 	private final int SATISFIED_UPPER_BIN = 13;
 	private final int SATISFIED_LOWER_BIN = 16;
+	
+	// Candidate builder methods
+	//.withModel (MeaurementsContainer) // MUST (Stores runtime task config and task metrics)
+	//.withApplication ("Demo 1") // MUST
+	//.withTask ("notSoFast") // MUST
+	//.withRttT (300)
+	//.withRttF (withRttT*4)
+	//.withSpanInSeconds (16) <- Fast refresh
+	//.withSpanInHours (4) <- Low volume
+	//.withSnapInSeconds (1) <- Fast refresh
+	//.withSnapInMinutes (15) <- Low volume
+	//.withLatencyHistBinDivisor (4) means 17 bins
+	//.build
+	
+	// Interface methods
+	// update() // Fetch new metrics for this task
+	// TODO Think about a MeasurementsContainerUpdater Class responsible for periodically updating tasks to decouple user requests from ES querying
 
-    public NotSoFastTaskMeasurement(String application, String task)	{
-    	notSoFast();
-    }
-    
-    private void notSoFast()	{
-    	//long snap = FIFTEEN_MINUTES;
-    	//long span = FOUR_HOURS;
-    	long snap = ONE_SECOND;
-    	long span = SIXTEEN_SECONDS;
-    	
-    	// Establish current time
-    	long now = System.currentTimeMillis();
-    	// Establish current time rounded to snap
-    	long endTime = now - now%snap;
-    	// Establish earliest time in span
-    	long startTime = endTime - span;
-    	// Remove older metrics
-    	removeOlderMetrics(startTime);
-    	// Append new items to dapdexTimechart and vitalsTimechart until N is met (appendTimecharts())
-    	appendTimechartMetrics(startTime, endTime, snap);
-    	appendLatencyHistogram(startTime, endTime, snap);
-    	// Update latencyHistogram with updateLatencyHistogram() 
-    }
-    
+	// *******************************
+	// * Base class methods
+	// *******************************
+	
 	private int removeOlderMetrics(long startTime) {
 //		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
 		int numItemsToRemove = 0;
@@ -91,64 +88,6 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 	    DecimalFormat newFormat = new DecimalFormat("#.##");
 	    double randomValueRounded =  Double.valueOf(newFormat.format(randomValue));
 	    return randomValueRounded;
-	}
-	
-	private void appendTimechartMetrics(long startTime, long endTime, long snap) {
-		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
-		
-//		System.out.println("singleApdexTimechart startTime=" + startTime + ", endTime=" + endTime + ", snap=" + snap);
-		// Add APDEX scores for missing buckets within range
-		for (long i = startTime ; i < endTime ; i+=snap)	{
-			// Add only timeSequence data not yet populated 
-			if ( (timeSequence.size() > 0 // timeSequence has data AND i is higher than last timeSequence
-					&& i > timeSequence.get(timeSequence.size()-1)) 
-					|| timeSequence.size() == 0)	{ // OR if timeSequence empty
-				
-				
-//				System.out.println("singleApdexTimechart adding i=" + i);
-				// APDEX score
-				timeSequence.add(i);
-				// apdexScore to be random value between POOR and FAIR
-				double apdexScore = randDouble(apdexLowerLimit, apdexUpperLimit);
-				singleApdexTimechart.getApdexScores().add(apdexScore);
-				
-				// Vitals
-				vitalsTimechart.getTimeSequence().add(i);
-				vitalsTimechart.getCount().add(randInt(countLowerLimit,countUpperLimit));
-				vitalsTimechart.getErrors().add(randInt(errorLowerLimit,errorUpperLimit));
-				vitalsTimechart.getP95().add((int) ((1-apdexScore)*1000)+150);
-			}
-			
-		}
-//		System.out.println("singleApdexTimechart size =" +  timeSequence.size());
-		
-	}
-
-	
-	private void createLatencyHistogramBinsAndRttZones(LatencyHistogram histogram) {
-		ArrayList<String> bins = new ArrayList<String>();
-		ArrayList<String> rttZones = new ArrayList<String>();
-		bins.add("> " + Integer.toString(rttF));
-		rttZones.add("Frustrated");
-		int step = rttT/latencyHistogramFactor ;
-		for (int from=rttF-step ; from >= 0 ; from=from-step)	{
-			// the 3rd and subsequent bins 'to' should be decremented by one 
-			// ["> 1200", "1125-1200", "1050-1124"]
-			int to = from+step-1;
-			
-			if ((from+step) == rttF) { // 2nd bin
-				to = from+step;
-			}
-			bins.add(Integer.toString(from)+"-"+Integer.toString(to));
-			if (to >= rttT)	{
-				rttZones.add("Tolerating");
-			}
-			else	{
-				rttZones.add("Satisfied");
-			}
-		}
-		histogram.setBins(bins);
-		histogram.setRttZone(rttZones);
 	}
 
 	private int getNumberOfSamples(VitalsTimechart vitals)	{
@@ -195,6 +134,87 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 	    DecimalFormat newFormat = new DecimalFormat("#.##");
 	    apdexScore =  Double.valueOf(newFormat.format(apdexScore));
 	    return apdexScore;
+	}
+	// *******************************
+	// * Specialized methods
+	// *******************************
+	
+    public NotSoFastTaskMeasurement(String application, String task)	{
+    	//long snap = FIFTEEN_MINUTES;
+    	//long span = FOUR_HOURS;
+    	long snap = ONE_SECOND;
+    	long span = SIXTEEN_SECONDS;
+    	
+    	// Establish current time
+    	long now = System.currentTimeMillis();
+    	// Establish current time rounded to snap
+    	long endTime = now - now%snap;
+    	// Establish earliest time in span
+    	long startTime = endTime - span;
+    	// Remove older metrics
+    	removeOlderMetrics(startTime);
+    	// Append new items to dapdexTimechart and vitalsTimechart until N is met (appendTimecharts())
+    	appendTimechartMetrics(startTime, endTime, snap);
+    	appendLatencyHistogram(startTime, endTime, snap);
+    	// Update latencyHistogram with updateLatencyHistogram() 
+    }
+    
+	
+	private void appendTimechartMetrics(long startTime, long endTime, long snap) {
+		ArrayList<Long> timeSequence = singleApdexTimechart.getTimeSequence();
+		
+//		System.out.println("singleApdexTimechart startTime=" + startTime + ", endTime=" + endTime + ", snap=" + snap);
+		// Add APDEX scores for missing buckets within range
+		for (long i = startTime ; i < endTime ; i+=snap)	{
+			// Add only timeSequence data not yet populated 
+			if ( (timeSequence.size() > 0 // timeSequence has data AND i is higher than last timeSequence
+					&& i > timeSequence.get(timeSequence.size()-1)) 
+					|| timeSequence.size() == 0)	{ // OR if timeSequence empty
+				
+				
+//				System.out.println("singleApdexTimechart adding i=" + i);
+				// APDEX score
+				timeSequence.add(i);
+				// apdexScore to be random value between POOR and FAIR
+				double apdexScore = randDouble(apdexLowerLimit, apdexUpperLimit);
+				singleApdexTimechart.getApdexScores().add(apdexScore);
+				
+				// Vitals
+				vitalsTimechart.getTimeSequence().add(i);
+				vitalsTimechart.getCount().add(randInt(countLowerLimit,countUpperLimit));
+				vitalsTimechart.getErrors().add(randInt(errorLowerLimit,errorUpperLimit));
+				vitalsTimechart.getP95().add((int) ((1-apdexScore)*1000)+150);
+			}
+			
+		}
+//		System.out.println("singleApdexTimechart size =" +  timeSequence.size());
+		
+	}
+
+	private void createLatencyHistogramBinsAndRttZones(LatencyHistogram histogram) {
+		ArrayList<String> bins = new ArrayList<String>();
+		ArrayList<String> rttZones = new ArrayList<String>();
+		bins.add("> " + Integer.toString(rttF));
+		rttZones.add("Frustrated");
+		int step = rttT/latencyHistogramFactor ;
+		for (int from=rttF-step ; from >= 0 ; from=from-step)	{
+			// the 3rd and subsequent bins 'to' should be decremented by one 
+			// ["> 1200", "1125-1200", "1050-1124"]
+			int to = from+step-1;
+			
+			if ((from+step) == rttF) { // 2nd bin
+				to = from+step;
+			}
+			bins.add(Integer.toString(from)+"-"+Integer.toString(to));
+			if (to >= rttT)	{
+				rttZones.add("Tolerating");
+			}
+			else	{
+				rttZones.add("Satisfied");
+			}
+		}
+		histogram.setBins(bins);
+		histogram.setRttZone(rttZones);
 	}
 	
 	private void createLatencyHistogramCounts(LatencyHistogram histogram, VitalsTimechart vitals) {

@@ -1,6 +1,6 @@
 package com.apm4all.tracy;
 
-public class TaskMeasurementFrontendService {
+public class TaskMeasurementService {
 
 	//FIXME: Inject cache singleton using Spring
     private RawTaskMeasurementCache rawTaskMeasurementCache = new RawTaskMeasurementCache();

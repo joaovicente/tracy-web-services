@@ -5,16 +5,16 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TaskMeasurementFrontendServiceTest {
+public class TaskMeasurementServiceTest {
 
-	private TaskMeasurementFrontendService svc;
+	private TaskMeasurementService svc;
 
 	@Before
 	public void setUp() throws Exception {
 		RawTaskMeasurementCollector collector = new RawTaskMeasurementCollector();
 		RawTaskMeasurementCache cache = new RawTaskMeasurementCache();
 //		TaskConfigDao taskConfig = new TaskConfigDao();
-		svc = new TaskMeasurementFrontendService();
+		svc = new TaskMeasurementService();
 		svc.setMeasurementCollector(collector);
 		svc.setMeasurementCache(cache);
 	}

@@ -10,7 +10,7 @@
     <bean class="com.apm4all.tracy.RouteBuilder" id="routeBuilder" />
 
 	<!-- a bean for taskMeasurement services -->
-	<bean id="taskMeasurementService" class="com.apm4all.tracy.TaskMeasurementService" />
+	<bean id="taskMeasurementFrontendService" class="com.apm4all.tracy.TaskMeasurementFrontendService" />
 
 	<!-- a bean for taskMeasurement services -->
 	<bean id="applicationsService" class="com.apm4all.tracy.ApplicationsService" />

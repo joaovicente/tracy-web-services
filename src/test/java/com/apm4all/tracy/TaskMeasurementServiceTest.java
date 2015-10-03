@@ -8,14 +8,12 @@ import org.junit.Test;
 public class TaskMeasurementServiceTest {
 
 	private TaskMeasurementService svc;
+	private	RawTaskMeasurementCache cache;
 
 	@Before
 	public void setUp() throws Exception {
-		RawTaskMeasurementCollector collector = new RawTaskMeasurementCollector();
-		RawTaskMeasurementCache cache = new RawTaskMeasurementCache();
-//		TaskConfigDao taskConfig = new TaskConfigDao();
 		svc = new TaskMeasurementService();
-		svc.setMeasurementCollector(collector);
+		cache = new RawTaskMeasurementCache();
 		svc.setMeasurementCache(cache);
 	}
 
@@ -23,5 +21,11 @@ public class TaskMeasurementServiceTest {
 	public void getTaskMeasurementTest() {
 		TaskMeasurement measurement = svc.getTaskMeasurement("Simulated", "Static");
 		assertNotNull(measurement);
+	}
+	
+	@Test
+	public void refreshCache()	{
+		svc.refreshCache();
+		cache.getSequence("SimulatedBad", "NotSoFast");
 	}
 }

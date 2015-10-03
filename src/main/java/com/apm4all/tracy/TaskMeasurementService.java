@@ -1,10 +1,13 @@
 package com.apm4all.tracy;
 
 public class TaskMeasurementService {
-
+	// TaskMeasurementService receives TimeboxedRawTaskMeasurement(s) 
+	// and converts them into TaskMeasurement(s)
+	
+	
 	//FIXME: Inject cache singleton using Spring
     private RawTaskMeasurementCache rawTaskMeasurementCache = new RawTaskMeasurementCache();
-	private RawTaskMeasurementCollector rawTaskMeasurementCollector;
+	private TaskConfigDao taskConfigDao = new TaskConfigDao();
 
 	/**
      * Gets a measurement for a given application, task
@@ -26,12 +29,17 @@ public class TaskMeasurementService {
     	return taskMeasurement;
     }
 
-	public void setMeasurementCollector(RawTaskMeasurementCollector collector) {
-		this.rawTaskMeasurementCollector = collector;
-		
-	}
-
 	public void setMeasurementCache(RawTaskMeasurementCache cache) {
 		this.rawTaskMeasurementCache = cache;
+	}
+
+	public void refreshCache() {
+		for (TaskConfig taskConfig : taskConfigDao.getAll()) {
+			if (rawTaskMeasurementCache.isUpdateDue(taskConfig)) {
+				RawTaskMeasurementCollector collector = 
+						new RawTaskMeasurementSimulatedBadNotSoFastCollector(taskConfig, rawTaskMeasurementCache);
+				collector.collect();
+			}
+		}
 	}
 }

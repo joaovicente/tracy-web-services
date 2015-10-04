@@ -1,5 +1,6 @@
 package com.apm4all.tracy.simulations;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
@@ -14,13 +15,17 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 	public StaticApplicationMeasurement(String application) {
 	}
 
-	@Override
-	public MultiApdexTimechart getmultiApdexTimechart() {
-		MultiApdexTimechart multi = new MultiApdexTimechart();
-		SingleApdexTimechart single = new SingleApdexTimechart();;
+	private Double roundDouble(double d) {
+    	DecimalFormat newFormat = new DecimalFormat("#.##");
+    	double rd =  Double.valueOf(newFormat.format(d));
+    	return new Double(rd);
+	}
+	
+	private SingleApdexTimechart createSingleApdexTimechart(String task, double o) {
+		SingleApdexTimechart single = new SingleApdexTimechart();
 		
 		single.setApplication("Static");
-		single.setTask("sa");
+		single.setTask(task);
 		single.setRttUnit("ms");
 		single.setRttT(300);
 		single.setRttF(1200);
@@ -32,13 +37,34 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
     			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L}
     			));
 		single.setApdexScores(Arrays.asList(new Double[]
-    			{0.99,0.98,0.99,0.93,0.94,0.97,0.95,0.97,0.83,0.93,0.97,0.94,0.96,0.98,0.95,0.96}
+    			{roundDouble(0.99+o),
+				roundDouble(0.98+o),
+				roundDouble(0.99+o),
+				roundDouble(0.93+o),
+				roundDouble(0.94+o),
+				roundDouble(0.97+o),
+				roundDouble(0.95+o),
+				roundDouble(0.97+o),
+				roundDouble(0.83+o),
+				roundDouble(0.93+o),
+				roundDouble(0.97+o),
+				roundDouble(0.94+o),
+				roundDouble(0.96+o),
+				roundDouble(0.98+o),
+				roundDouble(0.95+o),
+				roundDouble(0.96+o)}
     			));	
-		
-		multi.add(single);
-		multi.add(single);
-		multi.add(single);
-		multi.add(single);
+		return single;
+	}
+	
+	
+	@Override
+	public MultiApdexTimechart getmultiApdexTimechart() {
+		MultiApdexTimechart multi = new MultiApdexTimechart();
+		multi.add(createSingleApdexTimechart("sa", 0.00));
+		multi.add(createSingleApdexTimechart("sb", -0.10));
+		multi.add(createSingleApdexTimechart("sc", -0.20));
+		multi.add(createSingleApdexTimechart("sd", -0.30));
 		return multi;
 	}
 

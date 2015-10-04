@@ -1,7 +1,10 @@
 package com.apm4all.tracy.simulations;
 
+import java.util.Arrays;
+
 import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
 import com.apm4all.tracy.widgets.model.MultiApdexTimechart;
+import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
 import com.apm4all.tracy.widgets.model.TaskMeasurementSummary;
 import com.apm4all.tracy.widgets.model.TasksSnapMeasurementSummary;
 import com.apm4all.tracy.widgets.model.TasksSpanMeasurementSummary;
@@ -13,8 +16,30 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 
 	@Override
 	public MultiApdexTimechart getmultiApdexTimechart() {
-		// TODO Auto-generated method stub
-		return null;
+		MultiApdexTimechart multi = new MultiApdexTimechart();
+		SingleApdexTimechart single = new SingleApdexTimechart();;
+		
+		single.setApplication("Static");
+		single.setTask("sa");
+		single.setRttUnit("ms");
+		single.setRttT(300);
+		single.setRttF(1200);
+    	// APDEX timechart
+		single.setTimeSequence(Arrays.asList(new Long[]
+    			{1443985200000L, 1443986100000L, 1443987000000L, 1443987900000L, 
+    			1443988800000L, 1443989700000L, 1443990600000L, 1443991500000L, 
+    			1443992400000L, 1443993300000L, 1443994200000L, 1443995100000L, 
+    			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L}
+    			));
+		single.setApdexScores(Arrays.asList(new Double[]
+    			{0.99,0.98,0.99,0.93,0.94,0.97,0.95,0.97,0.83,0.93,0.97,0.94,0.96,0.98,0.95,0.96}
+    			));	
+		
+		multi.add(single);
+		multi.add(single);
+		multi.add(single);
+		multi.add(single);
+		return multi;
 	}
 
 	@Override

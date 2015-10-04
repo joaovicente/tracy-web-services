@@ -23,8 +23,8 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     	singleApdexTimechart.setApplication("Static");
     	singleApdexTimechart.setTask("sa");
     	singleApdexTimechart.setRttUnit("ms");
-    	singleApdexTimechart.setRttT(300);
-    	singleApdexTimechart.setRttF(1200);
+    	singleApdexTimechart.setRttT(180);
+    	singleApdexTimechart.setRttF(720);
     	
     	// APDEX timechart
     	singleApdexTimechart.setTimeSequence(Arrays.asList(new Long[]

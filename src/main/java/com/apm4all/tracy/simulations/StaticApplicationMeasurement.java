@@ -27,8 +27,8 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		single.setApplication("Static");
 		single.setTask(task);
 		single.setRttUnit("ms");
-		single.setRttT(300);
-		single.setRttF(1200);
+		single.setRttT(180);
+		single.setRttF(720);
     	// APDEX timechart
 		single.setTimeSequence(Arrays.asList(new Long[]
     			{1443985200000L, 1443986100000L, 1443987000000L, 1443987900000L, 

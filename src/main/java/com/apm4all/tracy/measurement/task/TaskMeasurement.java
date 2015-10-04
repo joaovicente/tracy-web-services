@@ -1,8 +1,8 @@
-package com.apm4all.tracy;
+package com.apm4all.tracy.measurement.task;
 
-import com.apm4all.tracy.widgets.LatencyHistogram;
-import com.apm4all.tracy.widgets.SingleApdexTimechart;
-import com.apm4all.tracy.widgets.VitalsTimechart;
+import com.apm4all.tracy.widgets.model.LatencyHistogram;
+import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
+import com.apm4all.tracy.widgets.model.VitalsTimechart;
 
 public interface TaskMeasurement {
 

@@ -1,4 +1,4 @@
-package com.apm4all.tracy.widgets;
+package com.apm4all.tracy.widgets.model;
 
 import java.util.ArrayList;
 import java.util.List;

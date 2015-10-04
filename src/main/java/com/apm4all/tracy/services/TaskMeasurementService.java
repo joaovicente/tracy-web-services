@@ -1,4 +1,8 @@
-package com.apm4all.tracy;
+package com.apm4all.tracy.services;
+
+import com.apm4all.tracy.measurement.task.TaskMeasurement;
+import com.apm4all.tracy.simulations.NotSoFastTaskMeasurement;
+import com.apm4all.tracy.simulations.StaticTaskMeasurement;
 
 public class TaskMeasurementService {
 

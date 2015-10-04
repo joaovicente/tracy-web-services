@@ -54,8 +54,12 @@ public class RouteBuilder extends SpringRouteBuilder {
             .consumes("application/json").produces("application/json")
             .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for a Task")
             	.to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
+            	
+            .get("/applications/{application}/measurement").description("Get measurement for an Application")
+            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
 //                .to("direct:fakeTaskMeasurement");
-            .get("/applications").description("Get Tasks")
+
+            .get("/applications").description("Get Application and Task hierarchy")
             	.to("bean:applicationsService?method=getApplications()");
 //                .to("direct:fakeTaskMeasurement");
 

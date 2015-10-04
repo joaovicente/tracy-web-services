@@ -13,6 +13,9 @@
 	<bean id="taskMeasurementService" class="com.apm4all.tracy.services.TaskMeasurementService" />
 
 	<!-- a bean for taskMeasurement services -->
+	<bean id="applicationMeasurementService" class="com.apm4all.tracy.services.ApplicationMeasurementService" />
+	
+	<!-- a bean for taskMeasurement services -->
 	<bean id="applicationsService" class="com.apm4all.tracy.services.ApplicationsService" />
 	
     <!-- Camel Context -->     

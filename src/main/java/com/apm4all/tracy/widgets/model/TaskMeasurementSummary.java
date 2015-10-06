@@ -8,6 +8,7 @@ public class TaskMeasurementSummary {
 	private String periodUnit; // Supports "ms", "s", "m", "h", "d" 
 	// TODO: Convert to enum and test if supported by Camel REST And Swagger
 	private String rttUnit;  // Supports "ms", "s", "m", "h", "d" 
+	private Double apdexScore;
 	private Integer rttT; // Response Time Threshold - Tolerating
 	private Integer rttF; // Response Time Threshold - Frustrated
 	private Double meanThroughputMetric; // The throughput mean value per unit specified
@@ -144,5 +145,11 @@ public class TaskMeasurementSummary {
 	}
 	public void setTask(String task) {
 		this.task = task;
+	}
+	public Double getApdexScore() {
+		return apdexScore;
+	}
+	public void setApdexScore(Double apdexScore) {
+		this.apdexScore = apdexScore;
 	}
 }

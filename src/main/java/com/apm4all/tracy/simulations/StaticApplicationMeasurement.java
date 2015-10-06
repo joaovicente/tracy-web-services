@@ -79,6 +79,7 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setPeriod(4); 
 		task.setPeriodUnit("h"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
+		task.setApdexScore(0.97);
 		task.setRttT(300); // Response Time Threshold - Tolerating
 		task.setRttF(1200); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(20.0) ; // The throughput mean value per unit specified
@@ -114,6 +115,7 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setPeriod(15); 
 		task.setPeriodUnit("m"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
+		task.setApdexScore(0.96);
 		task.setRttT(300); // Response Time Threshold - Tolerating
 		task.setRttF(1200); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(16.3) ; // The throughput mean value per unit specified

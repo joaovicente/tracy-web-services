@@ -59,7 +59,7 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 	
 	
 	@Override
-	public MultiApdexTimechart getmultiApdexTimechart() {
+	public MultiApdexTimechart getMultiApdexTimechart() {
 		MultiApdexTimechart multi = new MultiApdexTimechart();
 		multi.add(createSingleApdexTimechart("sa", 0.00));
 		multi.add(createSingleApdexTimechart("sb", -0.10));

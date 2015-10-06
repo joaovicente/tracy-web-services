@@ -7,9 +7,8 @@ public class MultiApdexTimechart {
 	public MultiApdexTimechart() {
 		apdexTimechart = new ArrayList<SingleApdexTimechart>();
 	}
-
 	
-	public ArrayList<SingleApdexTimechart> getMultiApdexTimechart() {
+	public ArrayList<SingleApdexTimechart> getTasks() {
 		return apdexTimechart;
 	}
 	

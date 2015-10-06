@@ -9,7 +9,7 @@ public class TasksSnapMeasurementSummary {
 		tasksSpanMeasurementSummary = new ArrayList<TaskMeasurementSummary>() ;
 	}
 	
-	public ArrayList<TaskMeasurementSummary> getTasksSpanMeasurementSummary() {
+	public ArrayList<TaskMeasurementSummary> getTasks() {
 		return tasksSpanMeasurementSummary;
 	}
 

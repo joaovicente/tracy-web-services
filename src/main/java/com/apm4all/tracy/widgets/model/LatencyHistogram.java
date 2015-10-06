@@ -12,7 +12,6 @@ public class LatencyHistogram {
 		bins = new ArrayList<String>();
 		rttZone = new ArrayList<String>();
 		count = new ArrayList<Integer>();
-		
 	}
 	
 	public ArrayList<String> getBins() {

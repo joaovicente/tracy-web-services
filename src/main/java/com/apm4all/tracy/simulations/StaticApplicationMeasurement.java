@@ -65,21 +65,19 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		multi.add(createSingleApdexTimechart("sb", -0.10));
 		multi.add(createSingleApdexTimechart("sc", -0.20));
 		multi.add(createSingleApdexTimechart("sd", -0.30));
+		multi.add(createSingleApdexTimechart("se", -0.50));
 		return multi;
 	}
 
-	@Override
-	public TasksSpanMeasurementSummary getTasksSpanMeasurementSummary() {
-		TasksSpanMeasurementSummary tasks = new TasksSpanMeasurementSummary();
-		TaskMeasurementSummary task = new TaskMeasurementSummary();
 	
-		task.setTask("Static");
+	private void fillTaskSpanMeasurementSummary(TaskMeasurementSummary task, String taskName, Double apdexScore) {
+		task.setTask(taskName);
 		task.setErrorPercentage(0.01);
 		task.setLastUpdateTimestamp(1443999599999L);
 		task.setPeriod(4); 
 		task.setPeriodUnit("h"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
-		task.setApdexScore(0.97);
+		task.setApdexScore(apdexScore);
 		task.setRttT(300); // Response Time Threshold - Tolerating
 		task.setRttF(1200); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(20.0) ; // The throughput mean value per unit specified
@@ -95,27 +93,48 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setP90Latency(130.0);
 		task.setP95Latency(135.0);
 		task.setP99Latency(200.0);
-
-		// Simulate an Application with 4 tasks
+	}
+	
+	
+	@Override
+	public TasksSpanMeasurementSummary getTasksSpanMeasurementSummary() {
+		final double APDEX_EXCELLENT = 0.99;
+		final double APDEX_GOOD = 0.90;
+		final double APDEX_FAIR = 0.75;
+		final double APDEX_POOR = 0.60;
+		final double APDEX_UNACCEPTABLE = 0.40;
+		TasksSpanMeasurementSummary tasks = new TasksSpanMeasurementSummary();
+		
+		TaskMeasurementSummary task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticA", APDEX_EXCELLENT);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticB", APDEX_GOOD);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticC", APDEX_FAIR);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticD", APDEX_POOR);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticE", APDEX_UNACCEPTABLE);
 		tasks.add(task);
 		return tasks;
 	}
 
-	@Override
-	public TasksSnapMeasurementSummary getTasksSnapMeasurementSummary() {
-		TasksSnapMeasurementSummary tasks = new TasksSnapMeasurementSummary();
-		TaskMeasurementSummary task = new TaskMeasurementSummary();
-	
-		task.setTask("Static");
+	private void fillTaskSnapMeasurementSummary(TaskMeasurementSummary task, String taskName, Double apdexScore) {
+		task.setTask(taskName);
 		task.setErrorPercentage(0.01);
 		task.setLastUpdateTimestamp(1443999599999L);
 		task.setPeriod(15); 
 		task.setPeriodUnit("m"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
-		task.setApdexScore(0.96);
+		task.setApdexScore(apdexScore);
 		task.setRttT(300); // Response Time Threshold - Tolerating
 		task.setRttF(1200); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(16.3) ; // The throughput mean value per unit specified
@@ -131,11 +150,35 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setP90Latency(129.0);
 		task.setP95Latency(145.0);
 		task.setP99Latency(180.0);
-
-		// Simulate an Application with 4 tasks
+	}
+	
+	@Override
+	public TasksSnapMeasurementSummary getTasksSnapMeasurementSummary() {
+		final double APDEX_EXCELLENT = 0.99;
+		final double APDEX_GOOD = 0.90;
+		final double APDEX_FAIR = 0.75;
+		final double APDEX_POOR = 0.60;
+		final double APDEX_UNACCEPTABLE = 0.40;
+		TasksSnapMeasurementSummary tasks = new TasksSnapMeasurementSummary();
+		
+		TaskMeasurementSummary task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticA", APDEX_EXCELLENT);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticB", APDEX_GOOD);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticC", APDEX_FAIR);
 		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticD", APDEX_POOR);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticE", APDEX_UNACCEPTABLE);
 		tasks.add(task);
 		return tasks;
 	}

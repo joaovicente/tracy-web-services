@@ -184,7 +184,7 @@ public class NotSoFastTaskMeasurement implements TaskMeasurement {
 				vitalsTimechart.getTimeSequence().add(i);
 				vitalsTimechart.getCount().add(randInt(countLowerLimit,countUpperLimit));
 				vitalsTimechart.getErrors().add(randInt(errorLowerLimit,errorUpperLimit));
-				vitalsTimechart.getP95().add((int) ((1-apdexScore)*1000)+150);
+//				vitalsTimechart.getP95().add((int) ((1-apdexScore)*1000)+150);
 			}
 			
 		}

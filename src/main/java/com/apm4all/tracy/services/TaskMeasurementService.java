@@ -1,7 +1,6 @@
 package com.apm4all.tracy.services;
 
 import com.apm4all.tracy.measurement.task.TaskMeasurement;
-import com.apm4all.tracy.simulations.NotSoFastTaskMeasurement;
 import com.apm4all.tracy.simulations.StaticTaskMeasurement;
 
 public class TaskMeasurementService {
@@ -15,10 +14,7 @@ public class TaskMeasurementService {
      */
     public TaskMeasurement getTaskMeasurement(String application, String task) {
     	TaskMeasurement taskMeasurement = null;
-    	if (task.equals("Not-so-fast"))	{
-    		taskMeasurement = new NotSoFastTaskMeasurement(application, task);
-    	}
-    	else if (task.equals("Static"))	{
+    	if (application.equals("SimulatedApp"))	{
     		taskMeasurement = new StaticTaskMeasurement(application, task);
     	}
     	return taskMeasurement;

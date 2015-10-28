@@ -1,6 +1,12 @@
 package com.apm4all.tracy.simulations;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import com.apm4all.tracy.measurement.task.TaskMeasurement;
 import com.apm4all.tracy.widgets.model.LatencyHistogram;
@@ -8,69 +14,230 @@ import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
 import com.apm4all.tracy.widgets.model.VitalsTimechart;
 
 public class StaticTaskMeasurement implements TaskMeasurement {
-	static private SingleApdexTimechart singleApdexTimechart = new SingleApdexTimechart();
-	static private VitalsTimechart vitalsTimechart = new VitalsTimechart();
-	static private LatencyHistogram latencyHistogram = new LatencyHistogram();
+	// TODO: Create an Apdex class to hold constants, score calculations and the like
+	private static final double APDEX_EXCELLENT_UL 		= 1.00;
+	private static final double APDEX_EXCELLENT_LL 		= 0.94;
+	private static final double APDEX_GOOD_UL 			= 0.93;
+	private static final double APDEX_GOOD_LL 			= 0.85;
+	private static final double APDEX_FAIR_UL 			= 0.84;
+	private static final double APDEX_FAIR_LL 			= 0.70;
+	private static final double APDEX_POOR_UL 			= 0.69;
+	private static final double APDEX_POOR_LL 			= 0.50;
+	private static final double APDEX_UNACCEPTABLE_UL 	= 0.49;
+//	private static final double APDEX_UNACCEPTABLE_LL 	= 0.00;
+	private SingleApdexTimechart singleApdexTimechart;
+	private VitalsTimechart vitalsTimechart;
+	private LatencyHistogram latencyHistogram;
+	private String application;
+	private String task;
+	static Map<String, StaticTaskMeasurement> measurements = 
+			new HashMap<String, StaticTaskMeasurement>();
 
     public StaticTaskMeasurement(String application, String task)	{
-    	if (singleApdexTimechart.hasNoElements())	{
-    		// Initialize only once
-    		staticMeasurement();
+    	this.application = application;
+    	this.task = task;
+    	if (measurements.containsKey(task))	{
+    		singleApdexTimechart = measurements.get(task).getSingleApdexTimechart();
+    		vitalsTimechart = measurements.get(task).getVitalsTimechart();
+    		latencyHistogram = measurements.get(task).getLatencyHistogram();
+    	}
+    	else	{
+    		produceMeasurement();
+    		measurements.put(task, this);
     	}
     }
+  
+    public double roundDouble(double toRound, int decPlaces)	{
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("#");
+    	if (decPlaces > 0)	{
+    		sb.append(".");
+    	}
+    	for (int i=0 ; i < decPlaces ; i++)	{
+    		sb.append("#");
+    	}
+	    DecimalFormat newFormat = new DecimalFormat(sb.toString());
+	    double rounded =  Double.valueOf(newFormat.format(toRound));
+	    return rounded;
+    }
     
-    private void staticMeasurement()	{
-    	singleApdexTimechart.setApplication("Static");
-    	singleApdexTimechart.setTask("sa");
+	public double randDouble(double min, double max) {
+	    Random rand = new Random();
+	    double randomValue = min + (max - min) * rand.nextDouble();
+	    return roundDouble(randomValue,2);
+	}
+	
+	private double produceP95() {
+		double p95 = 0.0;
+		if (this.task.contains("Excellent"))	{
+			p95 = 160.0;
+		}
+		else if(this.task.contains("Good")){
+			p95 = 250.0;
+		}
+		else if(this.task.contains("Fair")){
+			p95 = 400.0;
+		}
+		else if(this.task.contains("Poor")){
+			p95 = 500.0;
+		}
+		else if(this.task.contains("Unacceptable")){
+			p95 = 800.0;
+		}
+		return p95;
+	}
+	
+	public double midPointWithVariance(double lower, double upper) {
+		double rangeWidth = upper-lower;
+		double midPoint = upper-(rangeWidth/2);
+		return(randDouble(midPoint-rangeWidth/8, midPoint+rangeWidth/8));
+	}
+	
+	public static int randInt(int min, int max) {
+	    Random rand = new Random();
+	    return rand.nextInt((max - min) + 1) + min;
+	}
+	
+	private double produceApdexScore()	{
+		double apdexScore = 0.0;
+		if (this.task.contains("Excellent"))	{
+			apdexScore = midPointWithVariance(APDEX_EXCELLENT_LL, APDEX_EXCELLENT_UL);
+		}
+		else if(this.task.contains("Good")){
+			apdexScore = midPointWithVariance(APDEX_GOOD_LL, APDEX_GOOD_UL);
+		}
+		else if(this.task.contains("Fair")){
+			apdexScore = midPointWithVariance(APDEX_FAIR_LL, APDEX_FAIR_UL);
+		}
+		else if(this.task.contains("Poor")){
+			apdexScore = midPointWithVariance(APDEX_POOR_LL, APDEX_POOR_UL);
+		}
+		else if(this.task.contains("Unacceptable")){
+			apdexScore = midPointWithVariance(APDEX_UNACCEPTABLE_UL-0.10, APDEX_UNACCEPTABLE_UL);
+		}
+		return apdexScore;
+	}
+
+    private void latencyHistrogramSpread(ArrayList<Integer> histogramCounts, int invocations, int satisfiedPerc, int toleratingPerc, int frustratedPerc) {
+    	final int FRUSTRATED_START_BUCKET 	= 0;
+    	final int TOLERATING_START_BUCKET 	= 1;
+    	final int SATISFIED_START_BUCKET 	= 13;
+    	final int LAST_BUCKET 				= 16;
+    	
+    	final int FRUSTRATED_BUCKET_COUNT 	= 1;
+    	final int TOLERATING_BUCKET_COUNT 	= 12;
+    	final int SATISFIED_BUCKET_COUNT 	= 4;
+    	// 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
+    	//  F  T  T  T  T  T  T  T  T  T  T  T  T  T  T  T  T  S  S  S  S
+    	
+    	int frustratedBucketCount = invocations * frustratedPerc /100 / FRUSTRATED_BUCKET_COUNT;
+    	int toleratingBucketCount = invocations * toleratingPerc /100 / TOLERATING_BUCKET_COUNT;
+    	int satisfiedBucketCount = invocations * satisfiedPerc /100 / SATISFIED_BUCKET_COUNT;
+    	
+    	for (int bucket=0 ; bucket <= LAST_BUCKET ; bucket++)	{
+    		if (bucket >= FRUSTRATED_START_BUCKET && bucket < FRUSTRATED_START_BUCKET + FRUSTRATED_BUCKET_COUNT) {
+    			histogramCounts.add(frustratedBucketCount);
+    		}
+    		if (bucket >= TOLERATING_START_BUCKET && bucket < TOLERATING_START_BUCKET + TOLERATING_BUCKET_COUNT) {
+    			histogramCounts.add(toleratingBucketCount);
+    		}
+    		if (bucket >= SATISFIED_START_BUCKET && bucket < SATISFIED_START_BUCKET + SATISFIED_BUCKET_COUNT) {
+    			histogramCounts.add(satisfiedBucketCount);
+    		}
+    	}
+	}
+	
+	private List<Integer> produceLatencyHistogramCounts()	{
+		ArrayList<Integer> counts;
+		counts = new ArrayList<Integer>();
+
+		// TODO: To be accurate should calculate total invocations minus errors 
+    	int invocations = 400*16;
+		if (this.task.contains("Excellent"))	{
+			latencyHistrogramSpread(counts, invocations, 100, 0, 0);
+		}
+		else if(this.task.contains("Good")){
+			latencyHistrogramSpread(counts, invocations, 80, 20, 0);
+		}
+		else if(this.task.contains("Fair")){
+			latencyHistrogramSpread(counts, invocations, 50, 50, 0);
+		}
+		else if(this.task.contains("Poor")){
+			latencyHistrogramSpread(counts, invocations, 40, 60, 0);
+		}
+		else if(this.task.contains("Unacceptable")){
+			latencyHistrogramSpread(counts, invocations, 0, 80, 20);
+		}    	
+		return counts;
+	}
+
+	private void produceMeasurement()	{
+		singleApdexTimechart = new SingleApdexTimechart();
+    	singleApdexTimechart.setApplication(application);
+    	singleApdexTimechart.setTask(task);
     	singleApdexTimechart.setRttUnit("ms");
     	singleApdexTimechart.setRttT(180);
     	singleApdexTimechart.setRttF(720);
+    	final int numBuckets = 16;
     	
     	// APDEX timechart
-    	singleApdexTimechart.setTimeSequence(Arrays.asList(new Long[]
+    	Long[] timeSequence = new Long[]
     			{1443985200000L, 1443986100000L, 1443987000000L, 1443987900000L, 
     			1443988800000L, 1443989700000L, 1443990600000L, 1443991500000L, 
     			1443992400000L, 1443993300000L, 1443994200000L, 1443995100000L, 
-    			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L}
-
-    			));
-    	singleApdexTimechart.setApdexScores(Arrays.asList(new Double[]
-    			{0.99,0.98,0.99,0.93,0.94,0.97,0.95,0.97,0.83,0.93,0.97,0.94,0.96,0.98,0.95,0.96}
-    			));
+    			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L};
+    	singleApdexTimechart.setTimeSequence(Arrays.asList(timeSequence));
+    	ArrayList<Double> apdexScores = new ArrayList<Double>();
+    	for (int i=0  ; i < numBuckets ; i++)	{
+    		apdexScores.add(produceApdexScore());
+    	}
+    	singleApdexTimechart.setApdexScores(apdexScores);
     	
     	// Vitals Timechart
-    	vitalsTimechart.setTimeSequence(Arrays.asList(new Long[]
-    			{1443985200000L, 1443986100000L, 1443987000000L, 1443987900000L, 
-    			1443988800000L, 1443989700000L, 1443990600000L, 1443991500000L, 
-    			1443992400000L, 1443993300000L, 1443994200000L, 1443995100000L, 
-    			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L}
-    			));
-    	vitalsTimechart.setCount(Arrays.asList(new Integer[]
-    			 {200,243,254,234,253,265,245,247,765,243,265,273,247,256,236,245}
-    	));
-    	
-    	vitalsTimechart.setErrors(Arrays.asList(new Integer[]
-    			{1,2,1,2,1,2,1,2,4,1,2,1,2,1,2,1}
-    	));
-    	vitalsTimechart.setP95(Arrays.asList(new Integer[]
-    			{110,132,141,143,151,134,123,131,111,125,123,143,122,156,116,145}
-    	));
+    	vitalsTimechart = new VitalsTimechart();
+    	vitalsTimechart.setTimeSequence(Arrays.asList(timeSequence));
+    
+    	ArrayList<Integer> counts = new ArrayList<Integer>();
+    	for (int i=0  ; i < numBuckets ; i++)	{
+    		counts.add(randInt(400, 405)); // around 400
+    	}
+    	vitalsTimechart.setCount(counts);
+    
+    	ArrayList<Integer> errors = new ArrayList<Integer>();
+    	for (int i=0  ; i < numBuckets ; i++)	{
+    		errors.add(randInt(0, 2)); // around 400
+    	}
+    	vitalsTimechart.setErrors(errors);
+    
+    	ArrayList<Double> p95s = new ArrayList<Double>();
+    	double P95_VARIANCE = 1.10;
+    	for (int i=0  ; i < numBuckets ; i++)	{
+    		double p95 = produceP95();
+    		p95s.add(roundDouble(randDouble(p95, p95*P95_VARIANCE),0)); // oscillate x%
+    	}
+    	vitalsTimechart.setP95(p95s);
     	
     	// Latency histogram
+    	latencyHistogram = new LatencyHistogram();
     	latencyHistogram.setBins(Arrays.asList(new String[]
-    			{"1200","1140-1200","1080-1139","1020-1079","960-1019","900-959","840-899","780-839","720-779","660-719"
-    			,"600-659","540-599","480-539","420-479","360-419","300-359","240-299","180-239","120-179","60-119","0-59"}
+    			{">720", 
+    			"675-719", "630-674", "585-629", "540-584", 
+    			"495-539", "450-494", "405-449", "360-404", 
+    			"315-359", "270-314", "225-269", "180-224", 
+    			"135-179", "90-134", "45-89", "0-44"}
     	));
     	latencyHistogram.setRttZone(Arrays.asList(new String[]
-    			{"Frustrated","Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating","Tolerating"
-    			,"Tolerating","Tolerating","Tolerating","Tolerating","Tolerating"
-    			,"Tolerating","Satisfied","Satisfied","Satisfied","Satisfied","Satisfied"}
+    			{"Frustrated",
+    			"Tolerating","Tolerating","Tolerating","Tolerating",
+    			"Tolerating","Tolerating","Tolerating","Tolerating",
+    			"Tolerating","Tolerating","Tolerating","Tolerating",
+    			"Satisfied","Satisfied","Satisfied","Satisfied"}
     	));
-    	latencyHistogram.setCount(Arrays.asList(new Integer[]
-    			{4,8,22,22,22,22,76,89,44,134,134,134,178,178,268,447,670,1548,312,89,44}
-    	));
+    	
+    	latencyHistogram.setCount(produceLatencyHistogramCounts());
     }
+
+
 
 	@Override
 	public SingleApdexTimechart getSingleApdexTimechart() {

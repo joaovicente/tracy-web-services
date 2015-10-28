@@ -7,13 +7,13 @@ public class VitalsTimechart {
 	private ArrayList<Long> timeSequence;
 	private ArrayList<Integer> count;
 	private ArrayList<Integer> errors;
-	private ArrayList<Integer> p95;
+	private ArrayList<Double> p95;
 	
 	public VitalsTimechart()	{
 		timeSequence = new ArrayList<Long>();
 		count = new ArrayList<Integer>();
 		errors = new ArrayList<Integer>();
-		p95 = new ArrayList<Integer>();
+		p95 = new ArrayList<Double>();
 	}
 
 	public ArrayList<Long> getTimeSequence() {
@@ -40,12 +40,12 @@ public class VitalsTimechart {
 		this.errors = new ArrayList<Integer>(errors);
 	}
 
-	public ArrayList<Integer> getP95() {
+	public ArrayList<Double> getP95() {
 		return p95;
 	}
 
-	public void setP95(List<Integer> p95) {
-		this.p95 = new ArrayList<Integer>(p95);
+	public void setP95(ArrayList<Double> p95s) {
+		this.p95 = new ArrayList<Double>(p95s);
 	}
 
 	public void trimLeft(int i) {
@@ -54,4 +54,5 @@ public class VitalsTimechart {
 		this.errors.remove(0);
 		this.p95.remove(0);
 	}
+
 }

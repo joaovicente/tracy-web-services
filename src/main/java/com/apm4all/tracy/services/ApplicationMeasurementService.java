@@ -13,10 +13,7 @@ public class ApplicationMeasurementService {
      */
     public ApplicationMeasurement getApplicationMeasurement(String application) {
     	ApplicationMeasurement applicationMeasurement = null;
-		if (application.equals("Not-so-fast"))	{
-//    		applicationMeasurement = new NotSoFastApplicationkMeasurement(application, task);
-    	}
-    	else if (application.equals("Static"))	{
+    	if (application.equals("SimulatedApp"))	{
     		applicationMeasurement = new StaticApplicationMeasurement(application);
     	}
     	return applicationMeasurement;

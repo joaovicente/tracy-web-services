@@ -11,6 +11,11 @@ import com.apm4all.tracy.widgets.model.TasksSnapMeasurementSummary;
 import com.apm4all.tracy.widgets.model.TasksSpanMeasurementSummary;
 
 public class StaticApplicationMeasurement implements ApplicationMeasurement  {
+	private final double APDEX_EXCELLENT = 0.99;
+	private final double APDEX_GOOD = 0.90;
+	private final double APDEX_FAIR = 0.75;
+	private final double APDEX_POOR = 0.60;
+	private final double APDEX_UNACCEPTABLE = 0.40;
 	
 	public StaticApplicationMeasurement(String application) {
 	}
@@ -21,54 +26,49 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
     	return new Double(rd);
 	}
 	
-	private SingleApdexTimechart createSingleApdexTimechart(String task, double o) {
-		SingleApdexTimechart single = new SingleApdexTimechart();
-		
-		single.setApplication("Static");
-		single.setTask(task);
-		single.setRttUnit("ms");
-		single.setRttT(180);
-		single.setRttF(720);
-    	// APDEX timechart
-		single.setTimeSequence(Arrays.asList(new Long[]
-    			{1443985200000L, 1443986100000L, 1443987000000L, 1443987900000L, 
-    			1443988800000L, 1443989700000L, 1443990600000L, 1443991500000L, 
-    			1443992400000L, 1443993300000L, 1443994200000L, 1443995100000L, 
-    			1443996000000L, 1443996900000L, 1443997800000L, 1443998700000L}
-    			));
-		single.setApdexScores(Arrays.asList(new Double[]
-    			{roundDouble(0.99+o),
-				roundDouble(0.98+o),
-				roundDouble(0.99+o),
-				roundDouble(0.93+o),
-				roundDouble(0.94+o),
-				roundDouble(0.97+o),
-				roundDouble(0.95+o),
-				roundDouble(0.97+o),
-				roundDouble(0.83+o),
-				roundDouble(0.93+o),
-				roundDouble(0.97+o),
-				roundDouble(0.94+o),
-				roundDouble(0.96+o),
-				roundDouble(0.98+o),
-				roundDouble(0.95+o),
-				roundDouble(0.96+o)}
-    			));	
-		return single;
-	}
-	
-	
 	@Override
 	public MultiApdexTimechart getMultiApdexTimechart() {
 		MultiApdexTimechart multi = new MultiApdexTimechart();
-		multi.add(createSingleApdexTimechart("sa", 0.00));
-		multi.add(createSingleApdexTimechart("sb", -0.10));
-		multi.add(createSingleApdexTimechart("sc", -0.20));
-		multi.add(createSingleApdexTimechart("sd", -0.30));
-		multi.add(createSingleApdexTimechart("se", -0.50));
+		multi.add(new StaticTaskMeasurement("Simulated", "StaticExcellentTask").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("Simulated", "StaticGoodTask").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("Simulated", "StaticFairTask").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("Simulated", "StaticPoorTask").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("Simulated", "StaticUnacceptableTask").getSingleApdexTimechart());
 		return multi;
 	}
 
+	private void setResponseTimeStats(TaskMeasurementSummary task, double mean, double p50, double p90, double p95, double p99) {
+		task.setMeanLatency(mean);
+		task.setP50Latency(p50);
+		task.setP90Latency(p90);
+		task.setP95Latency(p95);
+		task.setP99Latency(p99);
+	}
+	
+	private void fillResponseTimeStats(TaskMeasurementSummary task) {
+		// Assumes task.apdexScore has been populated 
+		//mean, median, p90, p95, p99
+		if (task.getApdexScore() == APDEX_EXCELLENT)	{
+			// Satisfied: 100%, Tolerating: 0%, Frustrated: 0%
+			setResponseTimeStats(task, 115.0, 140.0, 150.0, 160.0, 170.0);
+		}
+		else if (task.getApdexScore() == APDEX_GOOD)	{
+			// Satisfied: 80%, Tolerating: 20%, Frustrated: 0%
+			setResponseTimeStats(task, 130.0, 140.0, 200.0, 250.0, 300);
+		}
+		else if (task.getApdexScore() == APDEX_FAIR)	{
+			// Satisfied: 50%, Tolerating: 50%, Frustrated: 0%
+			setResponseTimeStats(task, 192.0, 200.0, 300.0, 400.0,	500.0);
+		}
+		else if (task.getApdexScore() == APDEX_POOR)	{
+			// Satisfied: 40%, Tolerating: 60%, Frustrated: 0%
+			setResponseTimeStats(task, 242.0, 250.0, 400.0, 500.0,	600.0);
+		}
+		else if (task.getApdexScore() == APDEX_UNACCEPTABLE)	{
+			// Satisfied: 0%, Tolerating: 80%, Frustrated: 20%
+			setResponseTimeStats(task, 472.0, 500.0, 800.0, 900.0,	1000.0);
+		}
+	}
 	
 	private void fillTaskSpanMeasurementSummary(TaskMeasurementSummary task, String taskName, Double apdexScore) {
 		task.setTask(taskName);
@@ -78,8 +78,8 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setPeriodUnit("h"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
 		task.setApdexScore(apdexScore);
-		task.setRttT(300); // Response Time Threshold - Tolerating
-		task.setRttF(1200); // Response Time Threshold - Frustrated
+		task.setRttT(180); // Response Time Threshold - Tolerating
+		task.setRttF(720); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(20.0) ; // The throughput mean value per unit specified
 		task.setMeanThroughputUnit("TPM"); // Transactions Per Hour/Minute/Second ("TPS", "TPM", "TPH")
 		task.setErrorPercentage(0.02); // Percentage of errors (5xx status only). Display 0.00 if less than 0.005
@@ -88,45 +88,9 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setStatus3xx(0); //Number of invocations returning 3xx status  
 		task.setStatus4xx(4); //Number of invocations returning 4xx status  
 		task.setStatus5xx(1); //Number of invocations returning 5xx status  
-		task.setMeanLatency(100.0);
-		task.setP50Latency(102.0);
-		task.setP90Latency(130.0);
-		task.setP95Latency(135.0);
-		task.setP99Latency(200.0);
+		fillResponseTimeStats(task);
 	}
 	
-	
-	@Override
-	public TasksSpanMeasurementSummary getTasksSpanMeasurementSummary() {
-		final double APDEX_EXCELLENT = 0.99;
-		final double APDEX_GOOD = 0.90;
-		final double APDEX_FAIR = 0.75;
-		final double APDEX_POOR = 0.60;
-		final double APDEX_UNACCEPTABLE = 0.40;
-		TasksSpanMeasurementSummary tasks = new TasksSpanMeasurementSummary();
-		
-		TaskMeasurementSummary task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticA", APDEX_EXCELLENT);
-		tasks.add(task);
-		
-		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticB", APDEX_GOOD);
-		tasks.add(task);
-		
-		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticC", APDEX_FAIR);
-		tasks.add(task);
-		
-		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticD", APDEX_POOR);
-		tasks.add(task);
-		
-		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticE", APDEX_UNACCEPTABLE);
-		tasks.add(task);
-		return tasks;
-	}
-
 	private void fillTaskSnapMeasurementSummary(TaskMeasurementSummary task, String taskName, Double apdexScore) {
 		task.setTask(taskName);
 		task.setErrorPercentage(0.01);
@@ -135,8 +99,8 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setPeriodUnit("m"); // Supports "ms", "s", "m", "h", "d" 
 		task.setRttUnit("ms");  // Supports "ms", "s", "m", "h", "d" 
 		task.setApdexScore(apdexScore);
-		task.setRttT(300); // Response Time Threshold - Tolerating
-		task.setRttF(1200); // Response Time Threshold - Frustrated
+		task.setRttT(180); // Response Time Threshold - Tolerating
+		task.setRttF(720); // Response Time Threshold - Frustrated
 		task.setMeanThroughputMetric(16.3) ; // The throughput mean value per unit specified
 		task.setMeanThroughputUnit("TPM"); // Transactions Per Hour/Minute/Second ("TPS", "TPM", "TPH")
 		task.setErrorPercentage(0.02); // Percentage of errors (5xx status only). Display 0.00 if less than 0.005
@@ -145,40 +109,58 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		task.setStatus3xx(0); //Number of invocations returning 3xx status  
 		task.setStatus4xx(4); //Number of invocations returning 4xx status  
 		task.setStatus5xx(1); //Number of invocations returning 5xx status  
-		task.setMeanLatency(99.0);
-		task.setP50Latency(101.0);
-		task.setP90Latency(129.0);
-		task.setP95Latency(145.0);
-		task.setP99Latency(180.0);
+		fillResponseTimeStats(task);
 	}
 	
 	@Override
+	public TasksSpanMeasurementSummary getTasksSpanMeasurementSummary() {
+		TasksSpanMeasurementSummary tasks = new TasksSpanMeasurementSummary();
+		
+		TaskMeasurementSummary task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticExcellentTask", APDEX_EXCELLENT);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticGoodTask", APDEX_GOOD);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticFairTask", APDEX_FAIR);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSpanMeasurementSummary(task, "StaticPoorTask", APDEX_POOR);
+		tasks.add(task);
+		
+		task = new TaskMeasurementSummary();
+		fillTaskSnapMeasurementSummary(task, "StaticUnacceptableTask", APDEX_UNACCEPTABLE);
+		tasks.add(task);
+		return tasks;
+	}
+
+	
+	@Override
 	public TasksSnapMeasurementSummary getTasksSnapMeasurementSummary() {
-		final double APDEX_EXCELLENT = 0.99;
-		final double APDEX_GOOD = 0.90;
-		final double APDEX_FAIR = 0.75;
-		final double APDEX_POOR = 0.60;
-		final double APDEX_UNACCEPTABLE = 0.40;
 		TasksSnapMeasurementSummary tasks = new TasksSnapMeasurementSummary();
 		
 		TaskMeasurementSummary task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticA", APDEX_EXCELLENT);
+		fillTaskSnapMeasurementSummary(task, "StaticExcellentTask", APDEX_EXCELLENT);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticB", APDEX_GOOD);
+		fillTaskSnapMeasurementSummary(task, "StaticGoodTask", APDEX_GOOD);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticC", APDEX_FAIR);
+		fillTaskSnapMeasurementSummary(task, "StaticFairTask", APDEX_FAIR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticD", APDEX_POOR);
+		fillTaskSnapMeasurementSummary(task, "StaticPoorTask", APDEX_POOR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticE", APDEX_UNACCEPTABLE);
+		fillTaskSnapMeasurementSummary(task, "StaticUnacceptableTask", APDEX_UNACCEPTABLE);
 		tasks.add(task);
 		return tasks;
 	}

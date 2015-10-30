@@ -8,12 +8,14 @@ public class VitalsTimechart {
 	private ArrayList<Integer> count;
 	private ArrayList<Integer> errors;
 	private ArrayList<Double> p95;
+	private ArrayList<Double> max;
 	
 	public VitalsTimechart()	{
 		timeSequence = new ArrayList<Long>();
 		count = new ArrayList<Integer>();
 		errors = new ArrayList<Integer>();
 		p95 = new ArrayList<Double>();
+		max = new ArrayList<Double>();
 	}
 
 	public ArrayList<Long> getTimeSequence() {
@@ -48,11 +50,20 @@ public class VitalsTimechart {
 		this.p95 = new ArrayList<Double>(p95s);
 	}
 
+	public ArrayList<Double> getMax() {
+		return max;
+	}
+
+	public void setMax(ArrayList<Double> max) {
+		this.max = new ArrayList<Double>(max);
+	}
+	
 	public void trimLeft(int i) {
 		this.timeSequence.remove(0);
 		this.count.remove(0);
 		this.errors.remove(0);
 		this.p95.remove(0);
+		this.max.remove(0);
 	}
 
 }

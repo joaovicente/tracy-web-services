@@ -13,7 +13,7 @@ import com.apm4all.tracy.widgets.model.LatencyHistogram;
 import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
 import com.apm4all.tracy.widgets.model.VitalsTimechart;
 
-public class StaticTaskMeasurement implements TaskMeasurement {
+public class StaticBatchTaskMeasurement implements TaskMeasurement {
 	// TODO: Create an Apdex class to hold constants, score calculations and the like
 	private static final double APDEX_EXCELLENT_UL 		= 1.00;
 	private static final double APDEX_EXCELLENT_LL 		= 0.94;
@@ -30,10 +30,10 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 	private LatencyHistogram latencyHistogram;
 	private String application;
 	private String task;
-	static Map<String, StaticTaskMeasurement> measurements = 
-			new HashMap<String, StaticTaskMeasurement>();
+	static Map<String, StaticBatchTaskMeasurement> measurements = 
+			new HashMap<String, StaticBatchTaskMeasurement>();
 
-    public StaticTaskMeasurement(String application, String task)	{
+    public StaticBatchTaskMeasurement(String application, String task)	{
     	this.application = application;
     	this.task = task;
     	if (measurements.containsKey(task))	{
@@ -99,22 +99,7 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 	}
 	
 	private double produceApdexScore()	{
-		double apdexScore = 0.0;
-		if (this.task.contains("Excellent"))	{
-			apdexScore = midPointWithVariance(APDEX_EXCELLENT_LL, APDEX_EXCELLENT_UL);
-		}
-		else if(this.task.contains("Good")){
-			apdexScore = midPointWithVariance(APDEX_GOOD_LL, APDEX_GOOD_UL);
-		}
-		else if(this.task.contains("Fair")){
-			apdexScore = midPointWithVariance(APDEX_FAIR_LL, APDEX_FAIR_UL);
-		}
-		else if(this.task.contains("Poor")){
-			apdexScore = midPointWithVariance(APDEX_POOR_LL, APDEX_POOR_UL);
-		}
-		else if(this.task.contains("Unacceptable")){
-			apdexScore = midPointWithVariance(APDEX_UNACCEPTABLE_UL-0.10, APDEX_UNACCEPTABLE_UL);
-		}
+		double apdexScore = 1.0;
 		return apdexScore;
 	}
 
@@ -175,10 +160,10 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 		singleApdexTimechart = new SingleApdexTimechart();
     	singleApdexTimechart.setApplication(application);
     	singleApdexTimechart.setTask(task);
-    	singleApdexTimechart.setRttUnit("ms");
-    	singleApdexTimechart.setRttT(180);
-    	singleApdexTimechart.setRttF(720);
-    	final int numBuckets = 16;
+    	singleApdexTimechart.setRttUnit("h");
+    	singleApdexTimechart.setRttT(20);
+    	singleApdexTimechart.setRttF(24);
+    	final int numBuckets = 14;
     	
     	// APDEX timechart
     	Long[] timeSequence = new Long[]
@@ -199,13 +184,13 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     
     	ArrayList<Integer> counts = new ArrayList<Integer>();
     	for (int i=0  ; i < numBuckets ; i++)	{
-    		counts.add(randInt(400, 405)); // around 400
+    		counts.add(1); 
     	}
     	vitalsTimechart.setCount(counts);
     
     	ArrayList<Integer> errors = new ArrayList<Integer>();
     	for (int i=0  ; i < numBuckets ; i++)	{
-    		errors.add(randInt(0, 2)); // around 400
+    		errors.add(0); 
     	}
     	vitalsTimechart.setErrors(errors);
     
@@ -213,31 +198,72 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     	ArrayList<Double> maxs = new ArrayList<Double>();
     	double P95_VARIANCE = 1.10;
     	for (int i=0  ; i < numBuckets ; i++)	{
-    		double p95 = produceP95();
-    		p95s.add(roundDouble(randDouble(p95, p95*P95_VARIANCE),0)); // oscillate x%
-    		maxs.add(roundDouble(randDouble(p95*5, p95*2*P95_VARIANCE),0)); // oscillate x%
+//    		double p95 = produceP95();
+    		// Simulating Prime periodical T=20h, F=24h
+    		double p95 = 15;
+    		double randRt = roundDouble(randDouble(p95, p95*P95_VARIANCE),0);
+    		p95s.add(randRt); 
+    		maxs.add(randRt); 
     	}
     	vitalsTimechart.setP95(p95s);
     	vitalsTimechart.setMax(maxs);
     	
     	// Latency histogram
+    	// Fragmentation Rules: 
+    	// [T*4 == F] LatencyHistogram bin size is F/12
+    	// [T*4 != F] bin size is a the highest common divisor (for F and T) which allows bin count to be below 16
     	latencyHistogram = new LatencyHistogram();
     	latencyHistogram.setBins(Arrays.asList(new String[]
-    			{">720", 
-    			"675-719", "630-674", "585-629", "540-584", 
-    			"495-539", "450-494", "405-449", "360-404", 
-    			"315-359", "270-314", "225-269", "180-224", 
-    			"135-179", "90-134", "45-89", "0-44"}
+    			{">24", 
+    			"22-24", 
+    			"20-22", 
+    			"18-20", 
+    			"16-18", 
+    			"14-16", 
+    			"12-14", 
+    			"10-12", 
+    			"8-10", 
+    			"6-8", 
+    			"4-6", 
+    			"2-4", 
+    			"0-2"}
     	));
     	latencyHistogram.setRttZone(Arrays.asList(new String[]
-    			{"Frustrated",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Satisfied","Satisfied","Satisfied","Satisfied"}
+    			{
+    			"Frustrated",
+    			"Tolerating",
+    			"Tolerating",
+    			"Tolerating",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied",
+    			"Satisfied"
+    			}
     	));
-    	
-    	latencyHistogram.setCount(produceLatencyHistogramCounts());
+    
+    	latencyHistogram.setCount(Arrays.asList(new Integer[]
+    			{
+    			0,
+    			0,
+    			0,
+    			0,
+    			0,
+    			14,
+    			0,
+    			0,
+    			0,
+    			0,
+    			0,
+    			0,
+    			0,
+    			}
+    	));
+    			
     }
 
 

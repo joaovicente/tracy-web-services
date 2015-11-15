@@ -41,9 +41,8 @@ public class TaskAnalysis {
 	public HashMap<String,Object> getTracyTasksPage()	{
 		//TODO: Return structure line below
 		HashMap<String,Object> tracyTasksPage = new HashMap<String,Object>();
-		tracyTasksPage.put("application", this.application);
-		tracyTasksPage.put("task", this.task);
 		tracyTasksPage.put("offset", this.offset);
+		tracyTasksPage.put("limit", this.limit);
 		tracyTasksPage.put("records", this.records);
 		ArrayList<Object> tracyTasks = new ArrayList<Object>();
 		tracyTasksPage.put("tracyTasks", tracyTasks);
@@ -55,19 +54,25 @@ public class TaskAnalysis {
 		return tracyTasksPage;
 	}
 
-	private ArrayList<Object> generateTracyTask(long timeOffset)	{
-		ArrayList<Object> tracyTask = new ArrayList<Object>(20);
+	private HashMap<String, Object> generateTracyTask(long timeOffset)	{
+		// TODO: Consider a class hierarchy for TracyTask, 
+		// tracyTasks[] 1-has->* tracyTask{} 1-has->* tracyEvents[]
+		ArrayList<Object> tracyTaskEvents = new ArrayList<Object>(20);
+		HashMap<String, Object> tracyEvents = new HashMap<String, Object>();
+		HashMap<String, Object> tracyTask = new HashMap<String, Object>();
 	    long rt = this.earliest;
 	    // var offset = 10; // msecOffset
 	    // var offset = 1010; // secOffset
 	    // var offset = 61010; // minOffset
 	    long offset = 3601000L; // hourOffset
 	    String host = "ukdb807735-3.local";
-	    tracyTask.add(createTracyEvent("TID-ab1234-x", "4F3D", "foo", "AD24", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "Service"));
-	    tracyTask.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));
-	    tracyTask.add(createTracyEvent("TID-ab1234-x", "23CF", "Http servlet", "4F3D", timeOffset+rt+offset*2, timeOffset+rt+offset*8, offset*6, host, "Service"));
-	    tracyTask.add(createTracyEvent("TID-ab1234-x", "DBF5", "Service handler", "23CF", timeOffset+rt+offset, timeOffset+rt+offset*9, offset*8, host, "Proxy"));
-	    tracyTask.add(createTracyEvent("TID-ab1234-x", "AAAA", "Client handler", "AD24", timeOffset+rt, timeOffset+rt+offset*10, offset*10, host, "Proxy"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "foo", "AD24", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "Service"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "23CF", "Http servlet", "4F3D", timeOffset+rt+offset*2, timeOffset+rt+offset*8, offset*6, host, "Service"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "DBF5", "Service handler", "23CF", timeOffset+rt+offset, timeOffset+rt+offset*9, offset*8, host, "Proxy"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AAAA", "Client handler", "AD24", timeOffset+rt, timeOffset+rt+offset*10, offset*10, host, "Proxy"));
+	    tracyEvents.put("tracyEvents", tracyTaskEvents);
+	    tracyTask.put("tracyTask", tracyEvents);
 	    return tracyTask;
 	}
 	
@@ -108,22 +113,6 @@ public class TaskAnalysis {
 
 	public String getSort() {
 		return sort;
-	}
-
-	public int getOffset() {
-		return offset;
-	}
-
-	public int getLimit() {
-		return limit;
-	}
-
-	public int getRecords() {
-		return records;
-	}
-
-	public ArrayList<Object> getTracyTasks() {
-		return tracyTasks;
 	}
 }
 

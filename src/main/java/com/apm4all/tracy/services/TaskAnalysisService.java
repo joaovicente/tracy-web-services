@@ -11,8 +11,13 @@ public class TaskAnalysisService {
      * @param task the task name
      * @return the measurement, or <tt>null</tt> if the application or task are invalid 
      */
-    public TaskAnalysis getTaskAnalysis(String application, String task) {
-    	TaskAnalysis taskAnalysis = new TaskAnalysis(application, task);
+    public TaskAnalysis getTaskAnalysis(String application, String task, 
+    		String earliest, String latest, String filter, String sort, 
+    		String limit, String offset) {
+    	TaskAnalysis taskAnalysis = new TaskAnalysis(
+    			application, task, Long.parseLong(earliest), Long.parseLong(latest), 
+    			filter, sort, Integer.parseInt(limit), Integer.parseInt(offset));
+    	
     	return taskAnalysis;
     }
 }

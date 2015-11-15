@@ -16,17 +16,17 @@ public class TaskAnalysis {
 	// tracyTasks 1-has->* tracyTask 1-has->* tracyEvents
 	private ArrayList<Object> tracyTasks;
 
-	public TaskAnalysis(String application, String task)	{
+	public TaskAnalysis(String application, String task, long earliest, long latest, String filter, String sort, int limit, int offset)	{
 		// TODO: handle params: earliest, latest, filter, sort
 		this.application = application;
 		this.task = task;
-		this.earliest = 1446415872559L;
-		this.latest = 	1446425872559L;
-		this.filter = "";
-		this.sort = "";
+		this.earliest = earliest;
+		this.latest = latest;
+		this.filter = filter;
+		this.sort = sort;
 		this.records = 18;
-		this.offset = 0;
-		this.limit = 20;
+		this.offset = offset;
+		this.limit = limit;
 		this.tracyTasks = new ArrayList<Object>(200);
 	}
 	

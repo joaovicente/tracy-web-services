@@ -14,6 +14,7 @@ public class TaskAnalysisService {
     public TaskAnalysis getTaskAnalysis(String application, String task, 
     		String earliest, String latest, String filter, String sort, 
     		String limit, String offset) {
+    	// FIXME: validate params and types and respond with 4xx if request is not suitable
     	TaskAnalysis taskAnalysis = new TaskAnalysis(
     			application, task, Long.parseLong(earliest), Long.parseLong(latest), 
     			filter, sort, Integer.parseInt(limit), Integer.parseInt(offset));

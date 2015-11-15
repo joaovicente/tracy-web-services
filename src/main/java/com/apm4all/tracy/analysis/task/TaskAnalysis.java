@@ -70,7 +70,7 @@ public class TaskAnalysis {
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "23CF", "Http servlet", "4F3D", timeOffset+rt+offset*2, timeOffset+rt+offset*8, offset*6, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "DBF5", "Service handler", "23CF", timeOffset+rt+offset, timeOffset+rt+offset*9, offset*8, host, "Proxy"));
-	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AAAA", "Client handler", "AD24", timeOffset+rt, timeOffset+rt+offset*10, offset*10, host, "Proxy"));
+	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AAAA", "Client handler", "DBF5", timeOffset+rt, timeOffset+rt+offset*10, offset*10, host, "Proxy"));
 	    tracyEvents.put("tracyEvents", tracyTaskEvents);
 	    tracyTask.put("tracyTask", tracyEvents);
 	    return tracyTask;

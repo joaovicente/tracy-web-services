@@ -2,6 +2,7 @@ package com.apm4all.tracy.analysis.task;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class TaskAnalysis {
 	private long earliest;
@@ -49,7 +50,7 @@ public class TaskAnalysis {
 	
 		// Create mocked up tracyTasks
 		for (int i=0 ; i<records ; i++)	{
-			tracyTasks.add(generateTracyTask(3600000L*i));
+			tracyTasks.add(generateTracyTask((latest-earliest)*i/limit));
 		}
 		return tracyTasksPage;
 	}
@@ -61,10 +62,35 @@ public class TaskAnalysis {
 		HashMap<String, Object> tracyEvents = new HashMap<String, Object>();
 		HashMap<String, Object> tracyTask = new HashMap<String, Object>();
 	    long rt = this.earliest;
-	    // var offset = 10; // msecOffset
-	    // var offset = 1010; // secOffset
-	    // var offset = 61010; // minOffset
+	    
+	    // Add jitter to offset
+	    timeOffset += ThreadLocalRandom.current().nextInt(0, 1000 + 1);;
+
+	    //[675 TO 719]
+	    String filterArray[] = this.filter.split(":");
+	    System.out.println(filterArray[1]);
+	    String limits[] = filterArray[1].split("\\Q[\\E|\\Q]\\E| TO ");
+//	    System.out.println(limits.length);
+//	    for (int i=0 ; i < limits.length ; i++)	{
+//	    	System.out.println(limits[i]);
+//	    }
+	    int ll = Integer.parseInt(limits[1]);
+//	    int ul = Integer.parseInt(limits[2]);
+	    
+	    // long offset = 10; // msecOffset
+	    // long offset = 1010; // secOffset
+	    // long offset = 61010; // minOffset
 	    long offset = 3601000L; // hourOffset
+	    
+	    if (this.task.contains("Static"))	{
+	    	// msec unit
+	    	offset = (ll/10L);
+	    }
+	    else	{
+	    	// hour unit
+	    	offset = ll*3601000L/10L;
+	    }
+	    
 	    String host = "ukdb807735-3.local";
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "foo", "AD24", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));

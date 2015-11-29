@@ -68,7 +68,7 @@ public class TaskAnalysis {
 
 	    //[675 TO 719]
 	    String filterArray[] = this.filter.split(":");
-	    System.out.println(filterArray[1]);
+//	    System.out.println(filterArray[1]);
 	    String limits[] = filterArray[1].split("\\Q[\\E|\\Q]\\E| TO ");
 //	    System.out.println(limits.length);
 //	    for (int i=0 ; i < limits.length ; i++)	{

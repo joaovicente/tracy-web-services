@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:camel="http://camel.apache.org/schema/spring"
+
+    xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <bean class="com.apm4all.tracy.RouteBuilder" id="routeBuilder" />
+
+	<!-- a bean for taskMeasurement services -->
+	<bean id="taskMeasurementService" class="com.apm4all.tracy.services.TaskMeasurementService" />
+
+	<!-- a bean for applicationMeasurement services -->
+	<bean id="applicationMeasurementService" class="com.apm4all.tracy.services.ApplicationMeasurementService" />
+	
+	<!-- a bean for taskMeasurement services -->
+	<bean id="applicationsService" class="com.apm4all.tracy.services.ApplicationsService" />
+	
+	<!-- a bean for taskAnalysis services -->
+	<bean id="taskAnalysisService" class="com.apm4all.tracy.services.TaskAnalysisService" />
+	
+    <!-- Camel Context -->     
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+      <camel:routeBuilder ref="routeBuilder"/>   
+    </camelContext>
+</beans>

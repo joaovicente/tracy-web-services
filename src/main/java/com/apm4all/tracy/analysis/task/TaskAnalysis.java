@@ -64,7 +64,7 @@ public class TaskAnalysis {
 	    long rt = this.earliest;
 	    
 	    // Add jitter to offset
-	    timeOffset += ThreadLocalRandom.current().nextInt(0, 1000 + 1);;
+	    timeOffset += ThreadLocalRandom.current().nextInt(0, 1000 + 1);
 
 	    //[675 TO 719]
 	    String filterArray[] = this.filter.split(":");
@@ -142,134 +142,201 @@ public class TaskAnalysis {
 	}
 }
 
-//"tracyTasksPage": {
-//    "offset": 0,
-//    "limit": 2,
-//    "records": 2,
-//    "tracyTasks": [
-//      {
-//        "tracyTask": {
-//          "tracyEvents": [
-//            {
-//              "taskId": "rrt017eudn-7245-675317-1",
-//              "parentOptId": "246A",
-//              "label": "transformEMF1ToJson",
-//              "optId": "CD54",
-//              "msecBefore": 1446163199518,
-//              "msecAfter": 1446163199518,
-//              "msecElapsed": 0,
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39"
-//            },
-//            {
-//              "taskId": "rrt017eudn-7245-675317-1",
-//              "parentOptId": "AG50",
-//              "label": "getCleanseMatch",
-//              "optId": "246A",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163199519,
-//              "msecElapsed": 1390,
-//              "subscriberType": "internal",
-//              "companyName": "Sarada Prasana Jena",
-//              "apigee.developer.app.name": "JenaS-Match-App-Prod",
-//              "lookupType": "NA",
-//              "reqParam": "MONSIEUR PIERRE CHALLET",
-//              "ctryCd": "FR",
-//              "component": "matchplus-ws",
-//              "sourceIp": "37.252.225.18",
-//              "apigee.developer.email": "jenas@dnb.com",
-//              "host": "ip-10-241-0-39",
-//              "subscriberNumber": "5008",
-//              "engineName": "GF"
-//            },
-//            {
-//              "taskId": "rrt017eudn-7245-675317-1",
-//              "parentOptId": "246A",
-//              "label": "transformJsonToEMF1",
-//              "optId": "9FD5",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163198129,
-//              "msecElapsed": 0,
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39"
-//            },
-//            {
-//              "taskId": "rrt017eudn-7245-675317-1",
-//              "parentOptId": "246A",
-//              "label": "matchEngineGF",
-//              "optId": "3278",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163199518,
-//              "msecElapsed": 1389,
-//              "lookupType": "NA",
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39",
-//              "engineName": "GF"
-//            }
-//          ]
-//        }
-//      },
-//      {
-//        "tracyTask": {
-//          "tracyEvents": [
-//            {
-//              "taskId": "rrt056wodn-25309-693227-1",
-//              "parentOptId": "246A",
-//              "label": "transformEMF1ToJson",
-//              "optId": "CD54",
-//              "msecBefore": 1446163199518,
-//              "msecAfter": 1446163199518,
-//              "msecElapsed": 0,
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39"
-//            },
-//            {
-//              "taskId": "rrt056wodn-25309-693227-1",
-//              "parentOptId": "AG50",
-//              "label": "getCleanseMatch",
-//              "optId": "246A",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163199519,
-//              "msecElapsed": 1390,
-//              "subscriberType": "internal",
-//              "companyName": "Sarada Prasana Jena",
-//              "apigee.developer.app.name": "JenaS-Match-App-Prod",
-//              "lookupType": "NA",
-//              "reqParam": "MONSIEUR PIERRE CHALLET",
-//              "ctryCd": "FR",
-//              "component": "matchplus-ws",
-//              "sourceIp": "37.252.225.18",
-//              "apigee.developer.email": "jenas@dnb.com",
-//              "host": "ip-10-241-0-39",
-//              "subscriberNumber": "5008",
-//              "engineName": "GF"
-//            },
-//            {
-//              "taskId": "rrt056wodn-25309-693227-1",
-//              "parentOptId": "246A",
-//              "label": "transformJsonToEMF1",
-//              "optId": "9FD5",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163198129,
-//              "msecElapsed": 0,
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39"
-//            },
-//            {
-//              "taskId": "rrt056wodn-25309-693227-1",
-//              "parentOptId": "246A",
-//              "label": "matchEngineGF",
-//              "optId": "3278",
-//              "msecBefore": 1446163198129,
-//              "msecAfter": 1446163199518,
-//              "msecElapsed": 1389,
-//              "lookupType": "NA",
-//              "component": "matchplus-ws",
-//              "host": "ip-10-241-0-39",
-//              "engineName": "GF"
-//            }
-//          ]
-//        }
-//      }
-//    ]
-//  }
+//{
+//	  "earliest": 1443985200000,
+//	  "latest": 1443996900000,
+//	  "filter": "msecElapsed:[14 TO 16]",
+//	  "sort": "-msecElapsed",
+//	  "application": "SimulatedBatchApp",
+//	  "task": "BatchExcellentTask",
+//	  "tracyTasksPage": {
+//	    "limit": 20,
+//	    "tracyTasks": [
+//	      {
+//	        "tracyTask": {
+//	          "tracyEvents": [
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444010407964,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444020490764,
+//	              "component": "Service",
+//	              "optId": "AD24",
+//	              "label": "foo",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444000325164,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444010407964,
+//	              "component": "Service",
+//	              "optId": "AE5F",
+//	              "label": "bar",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443995283764,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 30248400,
+//	              "msecAfter": 1444025532164,
+//	              "component": "Service",
+//	              "optId": "4F3D",
+//	              "label": "Http servlet",
+//	              "parentOptId": "23CF"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443990242364,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 40331200,
+//	              "msecAfter": 1444030573564,
+//	              "component": "Proxy",
+//	              "optId": "23CF",
+//	              "label": "Service handler",
+//	              "parentOptId": "DBF5"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443985200964,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 50414000,
+//	              "msecAfter": 1444035614964,
+//	              "component": "Proxy",
+//	              "optId": "DBF5",
+//	              "label": "Client handler",
+//	              "parentOptId": "AAAA"
+//	            }
+//	          ]
+//	        }
+//	      },
+//	      {
+//	        "tracyTask": {
+//	          "tracyEvents": [
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444010992987,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444021075787,
+//	              "component": "Service",
+//	              "optId": "AD24",
+//	              "label": "foo",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444000910187,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444010992987,
+//	              "component": "Service",
+//	              "optId": "AE5F",
+//	              "label": "bar",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443995868787,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 30248400,
+//	              "msecAfter": 1444026117187,
+//	              "component": "Service",
+//	              "optId": "4F3D",
+//	              "label": "Http servlet",
+//	              "parentOptId": "23CF"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443990827387,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 40331200,
+//	              "msecAfter": 1444031158587,
+//	              "component": "Proxy",
+//	              "optId": "23CF",
+//	              "label": "Service handler",
+//	              "parentOptId": "DBF5"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443985785987,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 50414000,
+//	              "msecAfter": 1444036199987,
+//	              "component": "Proxy",
+//	              "optId": "DBF5",
+//	              "label": "Client handler",
+//	              "parentOptId": "AAAA"
+//	            }
+//	          ]
+//	        }
+//	      },
+//	      {
+//	        "tracyTask": {
+//	          "tracyEvents": [
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444011577830,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444021660630,
+//	              "component": "Service",
+//	              "optId": "AD24",
+//	              "label": "foo",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1444001495030,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 10082800,
+//	              "msecAfter": 1444011577830,
+//	              "component": "Service",
+//	              "optId": "AE5F",
+//	              "label": "bar",
+//	              "parentOptId": "4F3D"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443996453630,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 30248400,
+//	              "msecAfter": 1444026702030,
+//	              "component": "Service",
+//	              "optId": "4F3D",
+//	              "label": "Http servlet",
+//	              "parentOptId": "23CF"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443991412230,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 40331200,
+//	              "msecAfter": 1444031743430,
+//	              "component": "Proxy",
+//	              "optId": "23CF",
+//	              "label": "Service handler",
+//	              "parentOptId": "DBF5"
+//	            },
+//	            {
+//	              "taskId": "TID-ab1234-x",
+//	              "msecBefore": 1443986370830,
+//	              "host": "ukdb807735-3.local",
+//	              "msecElapsed": 50414000,
+//	              "msecAfter": 1444036784830,
+//	              "component": "Proxy",
+//	              "optId": "DBF5",
+//	              "label": "Client handler",
+//	              "parentOptId": "AAAA"
+//	            }
+//	          ]
+//	        }
+//	      }
+//	    ],
+//	    "records": 3,
+//	    "offset": 0
+//	  }
+//	}

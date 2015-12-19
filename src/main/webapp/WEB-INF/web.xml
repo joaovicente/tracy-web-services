@@ -69,7 +69,7 @@
   <!-- define that url path for the Camel Servlet to use -->
   <servlet-mapping>
     <servlet-name>CamelServlet</servlet-name>
-    <url-pattern>/tws/*</url-pattern>
+    <url-pattern>/*</url-pattern>
   </servlet-mapping>
 
   <!-- START SNIPPET: e2 -->

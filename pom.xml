@@ -146,6 +146,7 @@
   </dependencies>
 
   <build>
+  <finalName>tws</finalName>
 	<defaultGoal>install</defaultGoal>
 
 	<plugins>
@@ -268,7 +269,7 @@
         <version>8.1.16.v20140903</version>
         <configuration>
           <webAppConfig>
-            <contextPath>/</contextPath>
+            <contextPath>/tws</contextPath>
           </webAppConfig>
           <systemProperties>
             <!-- enable easy JMX connection to JConsole -->

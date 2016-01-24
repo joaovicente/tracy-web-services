@@ -30,9 +30,11 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import com.apm4all.tracy.measurement.task.TaskMeasurement;
+import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
+import com.apm4all.tracy.analysis.task.TaskAnalysis;
 
-import static org.apache.camel.model.rest.RestParamType.body;
 import static org.apache.camel.model.rest.RestParamType.path;
+import static org.apache.camel.model.rest.RestParamType.query;
 
 public class RouteBuilder extends SpringRouteBuilder {
 	
@@ -68,23 +70,26 @@ public class RouteBuilder extends SpringRouteBuilder {
 
         rest().description("Tracy Web Service")
             .consumes("application/json").produces("application/json")
-            .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for an Application/Task").outType(TaskMeasurement.class)
+            .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for a Task").outType(TaskMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
               .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
-            	.to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
+            	.to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
+            
+            .get("/applications/{application}/measurement").description("Get measurement for an Application").outType(ApplicationMeasurement.class)
+              .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
+            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
             	
-// ******************************** Start of fix me **************************************** 
-
-//            .get("/applications/{application}/measurement").description("Get measurement for an Application")
-//            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
-
-//            .get("/applications").description("Get Application and Task hierarchy")
-//            	.to("bean:applicationsService?method=getApplications()")
-        
-//            .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task")
-//            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");
-
-// ******************************** End of fix me **************************************** 
+            .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysis.class)
+              .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
+              .param().name("task").type(path).description("The task to analyse").dataType("string").endParam()
+              .param().name("earliest").type(query).description("The earliest time (in epoch msec)").dataType("string").endParam()
+              .param().name("latest").type(query).description("The latest time (in epoch msec)").dataType("string").endParam()
+              .param().name("filter").type(query).description("The expression to filter analysis").dataType("string").endParam()
+              .param().name("sort").type(query).description("The fields to sort by").dataType("string").endParam()
+              .param().name("limit").type(query).description("The number of records to analyse - i.e. page size").dataType("string").endParam()
+              .param().name("offset").type(query).description("The page number").dataType("string").endParam()
+            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");
+            
 
 //		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
 			// Tracy publishing should never block the sender

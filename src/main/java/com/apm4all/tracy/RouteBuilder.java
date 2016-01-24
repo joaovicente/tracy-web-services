@@ -23,9 +23,12 @@ import org.apache.camel.Processor;
 import org.apache.camel.component.elasticsearch.ElasticsearchConfiguration;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
+import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
+import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+
 import com.apm4all.tracy.measurement.task.TaskMeasurement;
 
 import static org.apache.camel.model.rest.RestParamType.body;
@@ -35,6 +38,20 @@ public class RouteBuilder extends SpringRouteBuilder {
 	
 	@Override
 	public void configure() throws Exception {
+		Tracer tracer = new Tracer();
+		tracer.setTraceOutExchanges(true);
+		 
+		// we configure the default trace formatter where we can
+		// specify which fields we want in the output
+		DefaultTraceFormatter formatter = new DefaultTraceFormatter();
+		formatter.setShowOutBody(true);
+		formatter.setShowOutBodyType(true);
+		 
+		// set to use our formatter
+		tracer.setFormatter(formatter);
+		 
+		getContext().addInterceptStrategy(tracer);
+
 
         // configure we want to use servlet as the component for the rest DSL
         // and we enable json binding mode //netty4-http
@@ -42,14 +59,14 @@ public class RouteBuilder extends SpringRouteBuilder {
             // and output using pretty print
             .dataFormatProperty("prettyPrint", "true")
             // setup context path and port number that netty will use
-            .contextPath("tws/v1").port(8080)
+            .contextPath("tws").port(8080)
             // add swagger api-doc out of the box
             .apiContextPath("/api-doc")
                 .apiProperty("api.title", "Tracy Web Services API").apiProperty("api.version", "1.0.0")
                 // and enable CORS
                 .apiProperty("cors", "true");
 
-        rest("/v1").description("Tracy Web Service")
+        rest().description("Tracy Web Service")
             .consumes("application/json").produces("application/json")
             .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for an Application/Task").outType(TaskMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()

@@ -73,14 +73,6 @@ public class SingleApdexTimechart {
 		this.rttF = rttF;
 	}
 
-	public void setTimeSequence(ArrayList<Long> timeSequence) {
-		this.timeSequence = timeSequence;
-	}
-
-	public void setApdexScores(ArrayList<Double> apdexScores) {
-		this.apdexScores = apdexScores;
-	}
-
 	public boolean hasNoElements() {
 		return timeSequence.isEmpty();
 	}

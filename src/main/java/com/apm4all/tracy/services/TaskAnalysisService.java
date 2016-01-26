@@ -1,6 +1,7 @@
 package com.apm4all.tracy.services;
 
-import com.apm4all.tracy.analysis.task.TaskAnalysis;
+import com.apm4all.tracy.apimodel.TaskAnalysis;
+import com.apm4all.tracy.simulations.TaskAnalysisFake;
 
 public class TaskAnalysisService {
 
@@ -15,7 +16,7 @@ public class TaskAnalysisService {
     		String earliest, String latest, String filter, String sort, 
     		String limit, String offset) {
     	// FIXME: validate params and types and respond with 4xx if request is not suitable
-    	TaskAnalysis taskAnalysis = new TaskAnalysis(
+    	TaskAnalysis taskAnalysis = new TaskAnalysisFake(
     			application, task, Long.parseLong(earliest), Long.parseLong(latest), 
     			filter, sort, Integer.parseInt(limit), Integer.parseInt(offset));
     	

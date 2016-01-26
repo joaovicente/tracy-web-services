@@ -29,9 +29,9 @@ import org.apache.camel.spring.SpringRouteBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import com.apm4all.tracy.analysis.task.TaskAnalysis;
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
+import com.apm4all.tracy.simulations.TaskAnalysisFake;
 
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;
@@ -79,17 +79,16 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
             	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
             	
-            .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysis.class)
+            .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
               .param().name("task").type(path).description("The task to analyse").dataType("string").endParam()
-              .param().name("earliest").type(query).description("The earliest time (in epoch msec)").dataType("string").endParam()
-              .param().name("latest").type(query).description("The latest time (in epoch msec)").dataType("string").endParam()
+              .param().name("earliest").type(query).description("The earliest time (in epoch msec)").dataType("integer").endParam()
+              .param().name("latest").type(query).description("The latest time (in epoch msec)").dataType("integer").endParam()
               .param().name("filter").type(query).description("The expression to filter analysis").dataType("string").endParam()
               .param().name("sort").type(query).description("The fields to sort by").dataType("string").endParam()
-              .param().name("limit").type(query).description("The number of records to analyse - i.e. page size").dataType("string").endParam()
-              .param().name("offset").type(query).description("The page number").dataType("string").endParam()
+              .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
+              .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
             	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");
-            
 
 //		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
 			// Tracy publishing should never block the sender

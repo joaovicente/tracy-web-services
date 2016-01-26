@@ -1,10 +1,12 @@
-package com.apm4all.tracy.analysis.task;
+package com.apm4all.tracy.simulations;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class TaskAnalysis {
+import com.apm4all.tracy.apimodel.TaskAnalysis;
+
+public class TaskAnalysisFake implements TaskAnalysis {
 	private long earliest;
 	private long latest;
 	private String filter;
@@ -17,7 +19,7 @@ public class TaskAnalysis {
 	// tracyTasks 1-has->* tracyTask 1-has->* tracyEvents
 	private ArrayList<Object> tracyTasks;
 
-	public TaskAnalysis(String application, String task, long earliest, long latest, String filter, String sort, int limit, int offset)	{
+	public TaskAnalysisFake(String application, String task, long earliest, long latest, String filter, String sort, int limit, int offset)	{
 		// TODO: handle params: earliest, latest, filter, sort
 		this.application = application;
 		this.task = task;
@@ -31,14 +33,26 @@ public class TaskAnalysis {
 		this.tracyTasks = new ArrayList<Object>(200);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getApplication()
+	 */
+	@Override
 	public String getApplication()	{
 		return this.application;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getTask()
+	 */
+	@Override
 	public String getTask()	{
 		return this.task;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getTracyTasksPage()
+	 */
+	@Override
 	public HashMap<String,Object> getTracyTasksPage()	{
 		//TODO: Return structure line below
 		HashMap<String,Object> tracyTasksPage = new HashMap<String,Object>();
@@ -125,18 +139,34 @@ public class TaskAnalysis {
 		return tracyEvent;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getEarliest()
+	 */
+	@Override
 	public long getEarliest() {
 		return earliest;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getLatest()
+	 */
+	@Override
 	public long getLatest() {
 		return latest;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getFilter()
+	 */
+	@Override
 	public String getFilter() {
 		return filter;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getSort()
+	 */
+	@Override
 	public String getSort() {
 		return sort;
 	}

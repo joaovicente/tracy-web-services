@@ -4,11 +4,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.apm4all.tracy.measurement.task.TaskMeasurement;
-import com.apm4all.tracy.widgets.model.LatencyHistogram;
-import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
-import com.apm4all.tracy.widgets.model.VitalsTimechart;
-
+import com.apm4all.tracy.apimodel.LatencyHistogram;
+import com.apm4all.tracy.apimodel.SingleApdexTimechart;
+import com.apm4all.tracy.apimodel.TaskMeasurement;
+import com.apm4all.tracy.apimodel.VitalsTimechart;
 public class NotSoFastTaskMeasurement implements TaskMeasurement {
 	static private SingleApdexTimechart singleApdexTimechart = new SingleApdexTimechart();
 	static private VitalsTimechart vitalsTimechart = new VitalsTimechart();

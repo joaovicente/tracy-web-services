@@ -1,8 +1,12 @@
-package com.apm4all.tracy.widgets.model;
+package com.apm4all.tracy.apimodel;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ApiModel(description = "A Vitals timechart")
 public class VitalsTimechart {
 	private ArrayList<Long> timeSequence;
 	private ArrayList<Integer> count;
@@ -18,6 +22,7 @@ public class VitalsTimechart {
 		max = new ArrayList<Double>();
 	}
 
+	@ApiModelProperty(value = "Time sequence in epoch msec", dataType="long", required = true)
 	public ArrayList<Long> getTimeSequence() {
 		return timeSequence;
 	}
@@ -26,6 +31,7 @@ public class VitalsTimechart {
 		this.timeSequence = new ArrayList<Long>(timeSequence);
 	}
 
+	@ApiModelProperty(value = "Invocation Count (includes errors)", dataType="int", required = true)
 	public ArrayList<Integer> getCount() {
 		return count;
 	}
@@ -34,6 +40,7 @@ public class VitalsTimechart {
 		this.count = new ArrayList<Integer>(count);
 	}
 
+	@ApiModelProperty(value = "Invocation Count (includes errors)", dataType="int", required = true)
 	public ArrayList<Integer> getErrors() {
 		return errors;
 	}
@@ -42,6 +49,7 @@ public class VitalsTimechart {
 		this.errors = new ArrayList<Integer>(errors);
 	}
 
+	@ApiModelProperty(value = "95th percentile response time", dataType="double", required = true)
 	public ArrayList<Double> getP95() {
 		return p95;
 	}
@@ -50,6 +58,7 @@ public class VitalsTimechart {
 		this.p95 = new ArrayList<Double>(p95s);
 	}
 
+	@ApiModelProperty(value = "Maximum response time", dataType="double", required = true)
 	public ArrayList<Double> getMax() {
 		return max;
 	}

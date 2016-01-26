@@ -29,9 +29,9 @@ import org.apache.camel.spring.SpringRouteBuilder;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import com.apm4all.tracy.measurement.task.TaskMeasurement;
-import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
 import com.apm4all.tracy.analysis.task.TaskAnalysis;
+import com.apm4all.tracy.apimodel.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.TaskMeasurement;
 
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;

@@ -42,6 +42,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 	public void configure() throws Exception {
 		Tracer tracer = new Tracer();
 		tracer.setTraceOutExchanges(true);
+		tracer.setEnabled(false);
 		 
 		// we configure the default trace formatter where we can
 		// specify which fields we want in the output
@@ -53,7 +54,6 @@ public class RouteBuilder extends SpringRouteBuilder {
 		tracer.setFormatter(formatter);
 		 
 		getContext().addInterceptStrategy(tracer);
-
 
         // configure we want to use servlet as the component for the rest DSL
         // and we enable json binding mode //netty4-http

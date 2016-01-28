@@ -21,7 +21,7 @@
 
   <groupId>com.apm4all.tracy</groupId>
   <artifactId>tracy-web-services</artifactId>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
 
   <name>Tracy Web Services</name>
   <description>Project delivering Tracy web services</description>

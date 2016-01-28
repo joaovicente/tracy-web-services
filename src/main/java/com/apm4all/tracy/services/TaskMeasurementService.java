@@ -1,8 +1,9 @@
 package com.apm4all.tracy.services;
 
-import com.apm4all.tracy.measurement.task.TaskMeasurement;
+import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.StaticBatchTaskMeasurement;
 import com.apm4all.tracy.simulations.StaticTaskMeasurement;
+
 
 public class TaskMeasurementService {
 

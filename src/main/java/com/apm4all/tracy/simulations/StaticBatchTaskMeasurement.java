@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import com.apm4all.tracy.measurement.task.TaskMeasurement;
-import com.apm4all.tracy.widgets.model.LatencyHistogram;
-import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
-import com.apm4all.tracy.widgets.model.VitalsTimechart;
+import com.apm4all.tracy.apimodel.LatencyHistogram;
+import com.apm4all.tracy.apimodel.SingleApdexTimechart;
+import com.apm4all.tracy.apimodel.TaskMeasurement;
+import com.apm4all.tracy.apimodel.VitalsTimechart;
 
 public class StaticBatchTaskMeasurement implements TaskMeasurement {
 	// TODO: Create an Apdex class to hold constants, score calculations and the like

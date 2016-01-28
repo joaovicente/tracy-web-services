@@ -1,6 +1,6 @@
 package com.apm4all.tracy.services;
 
-import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.simulations.StaticApplicationMeasurement;
 
 public class ApplicationMeasurementService {

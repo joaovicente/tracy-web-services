@@ -3,12 +3,12 @@ package com.apm4all.tracy.simulations;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 
-import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
-import com.apm4all.tracy.widgets.model.MultiApdexTimechart;
-import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
-import com.apm4all.tracy.widgets.model.TaskMeasurementSummary;
-import com.apm4all.tracy.widgets.model.TasksSnapMeasurementSummary;
-import com.apm4all.tracy.widgets.model.TasksSpanMeasurementSummary;
+import com.apm4all.tracy.apimodel.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.MultiApdexTimechart;
+import com.apm4all.tracy.apimodel.SingleApdexTimechart;
+import com.apm4all.tracy.apimodel.TaskMeasurementSummary;
+import com.apm4all.tracy.apimodel.TasksSnapMeasurementSummary;
+import com.apm4all.tracy.apimodel.TasksSpanMeasurementSummary;
 
 public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 	private final double APDEX_EXCELLENT = 0.99;

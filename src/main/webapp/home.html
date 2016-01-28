@@ -26,31 +26,25 @@
 <body>
 <div class="row">
     <div class="large-12 columns">
-        <h2>Apache Camel REST sample service using Swagger</h2>
+        <h2>Tracy Web Services REST API</h2>
     </div>
 </div>
 
 <div class="row">
     <div class="large-12 columns">
-        This example shows how to use Servlet REST to define REST endpoints in Camel routes using the Rest DSL,
-        and using camel-swagger-java to expose the REST service APIs.
-
+    	This service is used by <a href="https://github.com/joaovicente/tracy-web-app">Tracy Web Application</a>
         <br/>
 
-        This sample project is based on the example projects provided in the <a href="https://github.com/apache/camel">Camel repository</a></br>
-        It differs from the examples in that, it provides a single example that:<br/>
+        Tracy Web Services key domain objects are: 
         <ul>
-            <li>Bundles a WAR containing swagger-ui</li>
-            <li>Uses the Java Rest DSL</li>
-            <li>Is self contained (i.e. does not depend from Camel examples parent pom)</li>
+            <li>Applications: Allow grouping a set of Tasks logically</li>
+            <li>Task: Captures a specific (measurable) interface (i.e. a service endpoint), which can be further filterable by <a href="https://github.com/joaovicente/tracy">Tracy</a></li>
         </ul>
-
-        <p/>
         There is a <i>user</i> REST service that supports the following operations
         <ul>
-            <li>GET /user/{id} - to view a user with the given id</li>
-            <li>GET /user/final - to view all users</li>
-            <li>PUT /user - to update/create an user</li>
+            <li>GET v1/applications/{application}/tasks/{task}/measurement - obtains performance measurement for a Task</li>
+            <li>GET v1/applications/{application}/measurement - obtains performance measurement for a all Tasks associated with an Application</li>
+            <li>GET v1/applications/{application}/tasks/{task}/analysis - obtains performance analysis for Task</li>
         </ul>
 
         The view operations are HTTP GET, and update is using HTTP PUT.
@@ -58,34 +52,26 @@
         From a web browser you can access the first two services using the following links
 
         <ul>
-            <li><a href="v1/user/123">user/123</a> - to view the user with id 123</li>
-            <li><a href="v1/user/findAll">user/findAll</a> - to list all users</li>
+            <li><a href="v1/applications/SimulatedApp/measurement">applications/SimulatedApp/measurement</a> - to measure Application</li>
+            <li><a href="v1/applications/SimulatedApp/tasks/StaticExcellentTask/measurement">applications/SimulatedApp/tasks/StaticExcellentTask/measurement</a> - to measure Task</li>
+            <li><a href="v1/applications/SimulatedBatchApp/tasks/BatchExcellentTask/analysis?earliest=1443985200000&filter=msecElapsed:%5B14+TO+16%5D&latest=1443998700000&limit=20&offset=0&sort=-msecElapsed">applications/SimulatedBatchApp/tasks/BatchExcellentTask/analysis</a> - to analyse Task</li>
+            
         </ul>
 
-        From the command shell you can use curl to access the service as shown below:
-<pre>
-    curl -X GET -H "Accept: application/json" http://localhost:8080/camel-swagger-svc/v1/user/123
-    curl -X GET -H "Accept: application/json" http://localhost:8080/camel-swagger-svc/v1/user/findAll
-    curl -X PUT -d "{ \"id\": 666, \"name\": \"The devil\"}" -H "Accept: application/json" http://localhost:8080/camel-swagger-svc/v1/user
-</pre>
-
-        Notice when trying to get user with id 789 then there is a built-in delay of 0.5-2 seconds, to simulate some
-        slowness in the service.
-
         <p/>
-        This example offers an API browser using Swagger which is accessible from the following link
+        This service offers an API browser using Swagger which is accessible from the following link
         <ul>
             <li><a href="v1/api-doc">api-doc</a> - Api Doc</li>
         </ul>
 
         <p/>
-        To use the swagger ui, follow this link. Replace the URL value with this one to access the REST local resources http://localhost:8080/camel-swagger-svc/v1/api-doc
+        To use the swagger ui, follow this link. Replace the URL value with this one to access the REST local resources http://localhost:8080/tws/v1/api-doc
         <ul>
             <li><a href="index.html">swagger</a> - swagger ui page</li>
         </ul>
 
         <p/>
-        For the official Camel examples see <a href="https://github.com/apache/camel/tree/master/examples/camel-example-swagger-cdi">camel-example-swagger-cdi</a> and <a href="https://github.com/apache/camel/tree/master/examples/camel-example-swagger-java">camel-example-swagger-java</a>
+        This service is based on Apache Camel. If you want to learn more about Camel REST see <a href="https://github.com/apache/camel/tree/master/examples/camel-example-swagger-cdi">camel-example-swagger-cdi</a> and <a href="https://github.com/apache/camel/tree/master/examples/camel-example-swagger-java">camel-example-swagger-java</a>
         <br/>
     </div>
 </div>

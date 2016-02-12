@@ -16,19 +16,12 @@
  */
 
 package com.apm4all.tracy;
-import java.util.Map;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.component.elasticsearch.ElasticsearchConfiguration;
-import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
@@ -47,8 +40,10 @@ public class RouteBuilder extends SpringRouteBuilder {
 		// we configure the default trace formatter where we can
 		// specify which fields we want in the output
 		DefaultTraceFormatter formatter = new DefaultTraceFormatter();
-		formatter.setShowOutBody(true);
-		formatter.setShowOutBodyType(true);
+//		formatter.setShowOutBody(true);
+//		formatter.setShowOutBodyType(true);
+		formatter.setShowBody(true);
+		formatter.setShowBodyType(true);
 		 
 		// set to use our formatter
 		tracer.setFormatter(formatter);
@@ -77,7 +72,12 @@ public class RouteBuilder extends SpringRouteBuilder {
             
             .get("/applications/{application}/measurement").description("Get measurement for an Application").outType(ApplicationMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
-            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
+            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")            	
+            	
+            .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)
+              .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
+              .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
+            	.to("direct:search")
             	
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
@@ -90,6 +90,32 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
             	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");
 
+        from("direct:search")
+          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
+          .log("Request: ${body}")
+          .setHeader(Exchange.HTTP_METHOD, constant("POST"))
+          .setHeader(Exchange.HTTP_PATH, constant("_search"))
+          .setHeader(Exchange.HTTP_URI, constant("http://dockerhost:9200"))
+//			.to("elasticsearch://local?operation=INDEX&indexName=a&indexType=a");
+		  .to("elasticsearch://local?operation=SEARCH&indexName=a&indexType=a")
+//		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
+		  
+          .log("body: ${body}")
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+//					ObjectMapper mapper = new ObjectMapper(); // can reuse, share globally
+					String body = exchange.getIn().getBody(String.class); 
+					System.out.println("===========================");
+					System.out.println( body);
+					System.out.println("===========================");
+//					Map<String,Object> userData = mapper.readValue((String)exchange.getOut().getBody(), Map.class);
+//					exchange.getOut().setBody(userData);
+//					exchange.getIn().setBody(body);
+				}
+			})
+          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
+        
 //		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
 			// Tracy publishing should never block the sender
 			// waitForTaskToComplete allows endpoint to respond

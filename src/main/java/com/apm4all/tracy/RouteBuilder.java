@@ -18,10 +18,12 @@
 package com.apm4all.tracy;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
+
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
@@ -88,18 +90,16 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("sort").type(query).description("The fields to sort by").dataType("string").endParam()
               .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
-            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");
-
+            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");        
+               
         from("direct:search")
           .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
           .log("Request: ${body}")
-          .setHeader(Exchange.HTTP_METHOD, constant("POST"))
-          .setHeader(Exchange.HTTP_PATH, constant("_search"))
-          .setHeader(Exchange.HTTP_URI, constant("http://dockerhost:9200"))
-//			.to("elasticsearch://local?operation=INDEX&indexName=a&indexType=a");
-		  .to("elasticsearch://local?operation=SEARCH&indexName=a&indexType=a")
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-mysvc-2016.01.01"))
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
+          // TODO: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
-		  
+		  .to("elasticsearch://local?operation=SEARCH")
           .log("body: ${body}")
           .process(new Processor()	{
 				@Override

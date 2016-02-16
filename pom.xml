@@ -38,6 +38,13 @@
 
   <dependencies>
 
+    <!-- Tracy Dependencies -->
+  	<dependency>
+  		<groupId>com.apm4all.tracy</groupId>
+  		<artifactId>Tracy</artifactId>
+  		<version>3.1.0</version>
+  	</dependency>
+
     <!-- Camel Dependencies -->
     <dependency>
       <groupId>org.apache.camel</groupId>
@@ -52,6 +59,12 @@
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-servlet</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-quartz</artifactId>
       <version>2.16.1</version>
     </dependency>
 
@@ -135,12 +148,6 @@
       <groupId>com.apm4all.tracy</groupId>
       <artifactId>tracy-publisher</artifactId>
       <version>0.0-alpha</version>
-    </dependency>
-    <dependency>
-      <groupId>com.apm4all.tracy</groupId>
-      <artifactId>Tracy</artifactId>
-      <version>3.1.0</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

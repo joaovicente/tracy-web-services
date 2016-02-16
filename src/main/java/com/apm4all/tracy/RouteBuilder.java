@@ -16,7 +16,11 @@
  */
 
 package com.apm4all.tracy;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.camel.Exchange;
+import org.apache.camel.Headers;
 import org.apache.camel.Processor;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -27,11 +31,15 @@ import org.apache.camel.spring.SpringRouteBuilder;
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
+import com.apm4all.tracy.Tracy;
 
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;
 
 public class RouteBuilder extends SpringRouteBuilder {
+
+	private boolean tracySimulationEnabled = false; 
+	static final String TRACY_SIMULATION_ENABLED = "TRACY_SIMULATION_ENABLED";
 	
 	@Override
 	public void configure() throws Exception {
@@ -90,8 +98,97 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("sort").type(query).description("The fields to sort by").dataType("string").endParam()
               .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
-            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})");        
-               
+            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})")
+        
+            .post("/tracySimulation").description("Produce Tracy for simulation purposes")
+               .to("direct:toogleTracySimulation");
+            
+             
+        from("direct:toogleTracySimulation")
+          .setBody(simple(""))
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+					String response;
+					tracySimulationEnabled = !tracySimulationEnabled;
+					if(tracySimulationEnabled) {
+						response = "Tracy simulation enabled";
+					}
+					else {
+						response = "Tracy simulation disabled";
+					}
+					exchange.getIn().setBody(response);
+				}
+			});
+
+        from("quartz://everySecond?cron=0/1+*+*+*+*+?").routeId("everySecondTimer")
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+					Map<String, Object> headers = exchange.getIn().getHeaders();
+					if (tracySimulationEnabled)	{
+					  headers.put(TRACY_SIMULATION_ENABLED, new Boolean(true));
+					}
+					else {
+					  headers.put(TRACY_SIMULATION_ENABLED, new Boolean(false));
+					}
+				}
+			})
+          .choice()
+            .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
+              .to("seda:generateTracy");
+        
+        from("seda:generateTracy") 
+          .setBody(simple(""))
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+					final String COMPONENT = "hello-tracy";
+					final String OUTER = "outer";
+					final String INNER = "inner";
+			    	int status = 200;
+			    	long random = new Double(Math.random() * 100).longValue()+1;
+			    	if      ( random <= 80 )	{ status = 200; }//  80%  200: OK
+			    	else if ( random  > 99 ) { status = 202; }//   1%  202: Accepted
+			    	else if ( random  > 97 ) { status = 429; }//   1%  307: Temp redirect
+			    	else if ( random  > 87 ) { status = 404; }//   2%  400: Bad request
+			    	else if ( random  > 84 ) { status = 401; }//   3%  401: Unauthorized
+			    	else if ( random  > 82 ) { status = 400; }//  10%  404: not found
+			    	else if ( random  > 81 ) { status = 307; }//   2%  429: Too many requests
+			    	else if ( random  > 80 ) { status = 500; }//   1%  500: Internal server error	
+		    		Tracy.setContext(null, null, COMPONENT);
+		    		Tracy.before(OUTER);
+		    		Tracy.annotate("status", status);
+		    		Tracy.before(INNER);
+		        	long delayInMsec = new Double(Math.random() * 10).longValue() + 10;
+		        	Thread.sleep(delayInMsec);
+		    		Tracy.after(INNER);
+		        	delayInMsec = new Double(Math.random() * 200).longValue() + 100;
+		        	Thread.sleep(delayInMsec);
+		    		Tracy.after(OUTER);
+		    		List<String> tracy = Tracy.getEventsAsJson();
+		    		Tracy.clearContext();
+					exchange.getIn().setBody(tracy);
+				}
+			})
+			.to("seda:ingestTracy");
+        
+        from("seda:flushOldTracy")
+          //TODO: Prepare older than 60 minutes Tracy events
+		  .to("elasticsearch://local?operation=DELETE");
+          
+        from("seda:ingestTracy")
+          //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)
+          //TODO: prepare index name from Tracy frame
+//          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-mysvc-2016.01.01"))
+//          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
+          // TODO: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
+//		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
+          .split(body())
+          .log("${body}")
+          .to("mock:drop");
+//		  .to("elasticsearch://local?operation=INDEX");
+        
         from("direct:search")
           .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
           .log("Request: ${body}")

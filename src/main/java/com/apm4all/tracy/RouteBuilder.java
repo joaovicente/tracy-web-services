@@ -18,6 +18,7 @@
 package com.apm4all.tracy;
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
@@ -25,10 +26,17 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
+
+import java.util.HashMap;
 import java.util.Map;
+
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
@@ -36,7 +44,9 @@ import com.apm4all.tracy.simulations.TaskAnalysisFake;
 public class RouteBuilder extends SpringRouteBuilder {
 
 	private boolean tracySimulationEnabled = false; 
+	private boolean flushTracy = true; // Flush tracy at start-up
 	static final String TRACY_SIMULATION_ENABLED = "TRACY_SIMULATION_ENABLED";
+	static final String FLUSH_TRACY = "FLUSH_TRACY";
 	
 	@Override
 	public void configure() throws Exception {
@@ -133,7 +143,8 @@ public class RouteBuilder extends SpringRouteBuilder {
 			})
           .choice()
             .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
-              .to("seda:generateTracy");
+              .to("seda:generateTracy")
+              .to("seda:flushOldTracy");
         
         from("seda:generateTracy").routeId("generateTracy")
           .setBody(simple(""))
@@ -171,7 +182,31 @@ public class RouteBuilder extends SpringRouteBuilder {
         
         from("seda:flushOldTracy").routeId("flushOldTracy")
           //TODO: Prepare older than 60 minutes Tracy events
-		  .to("elasticsearch://local?operation=DELETE");
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+					Map<String, Object> headers = exchange.getIn().getHeaders();
+					if (flushTracy)	{
+						  headers.clear();
+						  headers.put(FLUSH_TRACY, new Boolean(true));
+						  flushTracy = false;
+					}
+					else	{
+						  headers.clear();
+						  headers.put(FLUSH_TRACY, new Boolean(false));
+					}
+//					exchange.getIn().setBody("");
+				}
+			})
+			.setHeader(Exchange.HTTP_METHOD, constant(org.apache.camel.component.http4.HttpMethods.DELETE))
+			.choice()
+			  .when(simple("${in.header.FLUSH_TRACY} == true"))
+                .log("flushing old tracy")
+			    .to("http4://localhost:9200/tracy-hello-tracy-*/tracy");
+                  //TODO: Investigate why Camel ES Delete is not working 
+//			      .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
+//                 .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
+//                .to("elasticsearch://local?operation=DELETE");
           
         from("seda:ingestTracy").routeId("ingestTracy")
           //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)
@@ -183,6 +218,8 @@ public class RouteBuilder extends SpringRouteBuilder {
 					@SuppressWarnings("unchecked")
 					Map<String, Object> tracy = (Map<String, Object>) exchange.getIn().getBody(); 
 					DateTime dt = new DateTime(Long.parseLong((String) tracy.get("msecBefore")));
+					String esTimestamp = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
+					tracy.put("@timestamp", esTimestamp);
 					StringBuilder index = new StringBuilder();
 					DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy.MM.dd");
 					String dateString = fmt.print(dt);

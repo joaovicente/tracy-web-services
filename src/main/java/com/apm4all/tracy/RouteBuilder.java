@@ -16,25 +16,22 @@
  */
 
 package com.apm4all.tracy;
-import java.util.List;
-import java.util.Map;
-
+import static org.apache.camel.model.rest.RestParamType.path;
+import static org.apache.camel.model.rest.RestParamType.query;
 import org.apache.camel.Exchange;
-import org.apache.camel.Headers;
 import org.apache.camel.Processor;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
-
+import java.util.Map;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
-import com.apm4all.tracy.Tracy;
-
-import static org.apache.camel.model.rest.RestParamType.path;
-import static org.apache.camel.model.rest.RestParamType.query;
 
 public class RouteBuilder extends SpringRouteBuilder {
 
@@ -104,7 +101,7 @@ public class RouteBuilder extends SpringRouteBuilder {
                .to("direct:toogleTracySimulation");
             
              
-        from("direct:toogleTracySimulation")
+        from("direct:toogleTracySimulation").routeId("toogleTracySimulation")
           .setBody(simple(""))
           .process(new Processor()	{
 				@Override
@@ -138,7 +135,7 @@ public class RouteBuilder extends SpringRouteBuilder {
             .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
               .to("seda:generateTracy");
         
-        from("seda:generateTracy") 
+        from("seda:generateTracy").routeId("generateTracy")
           .setBody(simple(""))
           .process(new Processor()	{
 				@Override
@@ -166,30 +163,42 @@ public class RouteBuilder extends SpringRouteBuilder {
 		        	delayInMsec = new Double(Math.random() * 200).longValue() + 100;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(OUTER);
-		    		List<String> tracy = Tracy.getEventsAsJson();
+					exchange.getIn().setBody(Tracy.getEventsAsMaps());
 		    		Tracy.clearContext();
-					exchange.getIn().setBody(tracy);
 				}
 			})
 			.to("seda:ingestTracy");
         
-        from("seda:flushOldTracy")
+        from("seda:flushOldTracy").routeId("flushOldTracy")
           //TODO: Prepare older than 60 minutes Tracy events
 		  .to("elasticsearch://local?operation=DELETE");
           
-        from("seda:ingestTracy")
+        from("seda:ingestTracy").routeId("ingestTracy")
           //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)
-          //TODO: prepare index name from Tracy frame
-//          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-mysvc-2016.01.01"))
-//          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
-          // TODO: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
-//		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
           .split(body())
-          .log("${body}")
-          .to("mock:drop");
-//		  .to("elasticsearch://local?operation=INDEX");
+//          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, "tracy-" + simple("${body[component]}")
+          .process(new Processor()	{
+				@Override
+				public void process(Exchange exchange) throws Exception {
+					@SuppressWarnings("unchecked")
+					Map<String, Object> tracy = (Map<String, Object>) exchange.getIn().getBody(); 
+					DateTime dt = new DateTime(Long.parseLong((String) tracy.get("msecBefore")));
+					StringBuilder index = new StringBuilder();
+					DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy.MM.dd");
+					String dateString = fmt.print(dt);
+					index.append("tracy-").append(tracy.get("component"))
+						.append("-").append(dateString);
+					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, index.toString());
+					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, "tracy");
+					String indexId = tracy.get("taskId") + "_" + tracy.get("optId");
+					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_ID, indexId);
+				}
+			})          
+//          .log("${body}")
+//          .log("${headers}")
+		  .to("elasticsearch://local?operation=INDEX");
         
-        from("direct:search")
+        from("direct:search").routeId("search")
           .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
           .log("Request: ${body}")
           .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-mysvc-2016.01.01"))

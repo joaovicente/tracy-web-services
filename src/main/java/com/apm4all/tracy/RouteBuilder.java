@@ -202,11 +202,12 @@ public class RouteBuilder extends SpringRouteBuilder {
 			.choice()
 			  .when(simple("${in.header.FLUSH_TRACY} == true"))
                 .log("flushing old tracy")
-			    .to("http4://localhost:9200/tracy-hello-tracy-*/tracy");
+			    .to("http4://localhost:9200/tracy-hello-tracy-*/tracy")
                   //TODO: Investigate why Camel ES Delete is not working 
 //			      .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
 //                 .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
 //                .to("elasticsearch://local?operation=DELETE");
+			    .endChoice();
           
         from("seda:ingestTracy").routeId("ingestTracy")
           //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)
@@ -258,6 +259,30 @@ public class RouteBuilder extends SpringRouteBuilder {
 				}
 			})
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
+//        GET _search
+//        {
+//           "query": {
+//              "filtered": {
+//                 "query": {
+//                    "query_string": {
+//                       "analyze_wildcard": true,
+//                       "query": "label:\"inner\""
+//                    }
+//                 }
+//              }
+//           },
+//           "aggs": {
+//              "articles_over_time": {
+//                 "date_histogram": {
+//                    "field": "@timestamp",
+//                    "interval": "1m",
+//                    "min_doc_count": 0
+//                 }
+//              }
+//            }
+//        }
+        
+        
         
 //		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
 			// Tracy publishing should never block the sender

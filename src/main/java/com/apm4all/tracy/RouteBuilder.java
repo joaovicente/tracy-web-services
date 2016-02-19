@@ -261,6 +261,7 @@ public class RouteBuilder extends SpringRouteBuilder {
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
 //        {
+//        "size": 0,
 //           "query": {
 //              "filtered": {
 //                 "query": {

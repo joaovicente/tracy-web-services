@@ -28,8 +28,14 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -244,16 +250,24 @@ public class RouteBuilder extends SpringRouteBuilder {
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
+					// TODO: Add aggregation 
+//					AggregationBuilder qb =
+//					        AggregationBuilders
+//					                .dateHistogram("agg")
+//					                .field("@timestamp")
+//					                .interval(DateHistogram.Interval.DAY);
 					MatchQueryBuilder qb = QueryBuilders.matchQuery("component", "hello-tracy");
-					//FIXME: There must be a better way to wrap the query
-					String body = "{\"query\":" + qb.toString() + "}";
-					exchange.getIn().setBody(body);
-					System.out.println("===========================");
-					System.out.println( body);
-					System.out.println("===========================");
+			        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
+			        qb.toXContent(contentBuilder, null);
+			        contentBuilder.field("size", 0);
+			        contentBuilder.endObject();
+					exchange.getIn().setBody(contentBuilder);
+//					System.out.println("===========================");
+//					System.out.println(contentBuilder.string());
+//					System.out.println("===========================");
 				}
 			})
-          .log("searchRequest: ${body}")
+          .log("searchRequest: ${body.string()}")
 		  .to("elasticsearch://local?operation=SEARCH")
           .log("searchResponse: ${body}")
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");

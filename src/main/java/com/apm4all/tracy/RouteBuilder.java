@@ -19,6 +19,8 @@ package com.apm4all.tracy;
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;
 
+import java.util.Map;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
@@ -28,11 +30,6 @@ import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -237,27 +234,28 @@ public class RouteBuilder extends SpringRouteBuilder {
 		  .to("elasticsearch://local?operation=INDEX");
         
         from("direct:search").routeId("search")
-          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
+//          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
+          .setBody(simple("{ \"query\": { \"match\" : { \"component\" : \"hello-tracy\" } } }"))
           .log("Request: ${body}")
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-mysvc-2016.01.01"))
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-2016.02.19"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // TODO: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
-		  .to("elasticsearch://local?operation=SEARCH")
-          .log("body: ${body}")
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
-//					ObjectMapper mapper = new ObjectMapper(); // can reuse, share globally
-					String body = exchange.getIn().getBody(String.class); 
+					MatchQueryBuilder qb = QueryBuilders.matchQuery("component", "hello-tracy");
+					//FIXME: There must be a better way to wrap the query
+					String body = "{\"query\":" + qb.toString() + "}";
+					exchange.getIn().setBody(body);
 					System.out.println("===========================");
 					System.out.println( body);
 					System.out.println("===========================");
-//					Map<String,Object> userData = mapper.readValue((String)exchange.getOut().getBody(), Map.class);
-//					exchange.getOut().setBody(userData);
-//					exchange.getIn().setBody(body);
 				}
 			})
+          .log("searchRequest: ${body}")
+		  .to("elasticsearch://local?operation=SEARCH")
+          .log("searchResponse: ${body}")
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
 //        {

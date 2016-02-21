@@ -31,8 +31,11 @@ import org.apache.camel.spring.SpringRouteBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -243,24 +246,31 @@ public class RouteBuilder extends SpringRouteBuilder {
 //          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
 //          .setBody(simple("{ \"query\": { \"match\" : { \"component\" : \"hello-tracy\" } } }"))
 //          .log("Request: ${body}")
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-2016.02.19"))
+//          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-2016.02.19"))
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
-					//TODO: Use QueryBuilders.filteredQuery to restrict component as well as time (last 60 minutes)
-					MatchQueryBuilder matchQueryBuilder = QueryBuilders
-						.matchQuery("component", "hello-tracy");
+					// "bool" Restrict results by time range and match criteria
+					long now = System.currentTimeMillis();
+					long latest = now - now % 60000 ; // Now rounded to the minute
+					long earliest = latest - 60000 * 15; // last 15 minutes
+					BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+							// TODO: For improved performance, filtering should be done at index level as well to avoid accessing uneccessary indexes
+							.must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))
+							.must(QueryBuilders.matchQuery("component", "hello-tracy"));
+//							.queryString("\"component\":\"hello-tracy\"").analyzeWildcard(true);
+					// "aggs" date histogram aggregation
 					@SuppressWarnings("rawtypes")
-					// Sample date histogram aggregation
 					AggregationBuilder aggregationBuilder = AggregationBuilders
 						.dateHistogram("timeBuckets")
 					    .field("@timestamp")
-					    .interval(DateHistogram.Interval.HOUR);
+					    .interval(DateHistogram.Interval.MINUTE);
 			        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
-			        matchQueryBuilder.toXContent(contentBuilder, null);
+			        queryBuilder.toXContent(contentBuilder, null);
 			        contentBuilder.startObject("aggs");
 			        aggregationBuilder.toXContent(contentBuilder, null);
 			        contentBuilder.endObject();

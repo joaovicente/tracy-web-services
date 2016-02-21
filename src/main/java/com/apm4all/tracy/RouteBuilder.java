@@ -28,14 +28,11 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.search.MultiMatchQuery.QueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
@@ -157,6 +154,7 @@ public class RouteBuilder extends SpringRouteBuilder {
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
+					//TODO: Extract Tracy generation to a separate thread
 					final String COMPONENT = "hello-tracy";
 					final String OUTER = "outer";
 					final String INNER = "inner";
@@ -165,9 +163,9 @@ public class RouteBuilder extends SpringRouteBuilder {
 			    	if      ( random <= 80 )	{ status = 200; }//  80%  200: OK
 			    	else if ( random  > 99 ) { status = 202; }//   1%  202: Accepted
 			    	else if ( random  > 97 ) { status = 429; }//   1%  307: Temp redirect
-			    	else if ( random  > 87 ) { status = 404; }//   2%  400: Bad request
+			    	else if ( random  > 87 ) { status = 404; }//  10%  404: Not found
 			    	else if ( random  > 84 ) { status = 401; }//   3%  401: Unauthorized
-			    	else if ( random  > 82 ) { status = 400; }//  10%  404: not found
+			    	else if ( random  > 82 ) { status = 400; }//   2%  404: Bad request
 			    	else if ( random  > 81 ) { status = 307; }//   2%  429: Too many requests
 			    	else if ( random  > 80 ) { status = 500; }//   1%  500: Internal server error	
 		    		Tracy.setContext(null, null, COMPONENT);
@@ -258,17 +256,36 @@ public class RouteBuilder extends SpringRouteBuilder {
 					long now = System.currentTimeMillis();
 					long latest = now - now % 60000 ; // Now rounded to the minute
 					long earliest = latest - 60000 * 15; // last 15 minutes
+					int rttTolerating = 200;
+					int rttFrustrated = rttTolerating*4;
 					BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
 							// TODO: For improved performance, filtering should be done at index level as well to avoid accessing uneccessary indexes
 							.must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))
-							.must(QueryBuilders.matchQuery("component", "hello-tracy"));
+							.must(QueryBuilders.matchQuery("component", "hello-tracy"))
+							.must(QueryBuilders.matchQuery("label", "outer"));
 //							.queryString("\"component\":\"hello-tracy\"").analyzeWildcard(true);
 					// "aggs" date histogram aggregation
 					@SuppressWarnings("rawtypes")
 					AggregationBuilder aggregationBuilder = AggregationBuilders
 						.dateHistogram("timeBuckets")
 					    .field("@timestamp")
-					    .interval(DateHistogram.Interval.MINUTE);
+					    .interval(DateHistogram.Interval.MINUTE)
+					    .subAggregation(
+					    	    AggregationBuilders
+					    	        .filters("agg")
+					    	            .filter("errors", FilterBuilders.rangeFilter("status").gte(500))
+					    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
+					    	            .filter("invocations", FilterBuilders.matchAllFilter())
+					    	            .filter("satisfied", FilterBuilders.andFilter(
+					    	            		FilterBuilders.rangeFilter("status").lt(500),
+					    	            		FilterBuilders.rangeFilter("msecElapsed").lt(rttTolerating)))
+					    	            .filter("tolerating", FilterBuilders.andFilter(
+					    	            		FilterBuilders.rangeFilter("status").lt(500),
+					    	            		FilterBuilders.rangeFilter("msecElapsed").gt(rttTolerating).lt(rttFrustrated)))
+					    	            .filter("frustrated", FilterBuilders.andFilter(
+					    	            		FilterBuilders.rangeFilter("status").lt(500),
+					    	            		FilterBuilders.rangeFilter("msecElapsed").gt(rttFrustrated)))
+					    		);
 			        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
 			        queryBuilder.toXContent(contentBuilder, null);
 			        contentBuilder.startObject("aggs");

@@ -38,6 +38,7 @@
 	
   <!-- Camel Context -->     
   <camelContext xmlns="http://camel.apache.org/schema/spring">
+    <jmxAgent id="agent" createConnector="true" registryPort="1099"/>
     <camel:routeBuilder ref="routeBuilder"/>   
   </camelContext>
 </beans>

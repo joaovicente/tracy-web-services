@@ -241,24 +241,29 @@ public class RouteBuilder extends SpringRouteBuilder {
         
         from("direct:search").routeId("search")
 //          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
-          .setBody(simple("{ \"query\": { \"match\" : { \"component\" : \"hello-tracy\" } } }"))
-          .log("Request: ${body}")
+//          .setBody(simple("{ \"query\": { \"match\" : { \"component\" : \"hello-tracy\" } } }"))
+//          .log("Request: ${body}")
           .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-2016.02.19"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
-          // TODO: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
+          // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
-					// TODO: Add aggregation 
-//					AggregationBuilder qb =
-//					        AggregationBuilders
-//					                .dateHistogram("agg")
-//					                .field("@timestamp")
-//					                .interval(DateHistogram.Interval.DAY);
-					MatchQueryBuilder qb = QueryBuilders.matchQuery("component", "hello-tracy");
+					//TODO: Use QueryBuilders.filteredQuery to restrict component as well as time (last 60 minutes)
+					MatchQueryBuilder matchQueryBuilder = QueryBuilders
+						.matchQuery("component", "hello-tracy");
+					@SuppressWarnings("rawtypes")
+					// Sample date histogram aggregation
+					AggregationBuilder aggregationBuilder = AggregationBuilders
+						.dateHistogram("timeBuckets")
+					    .field("@timestamp")
+					    .interval(DateHistogram.Interval.HOUR);
 			        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
-			        qb.toXContent(contentBuilder, null);
+			        matchQueryBuilder.toXContent(contentBuilder, null);
+			        contentBuilder.startObject("aggs");
+			        aggregationBuilder.toXContent(contentBuilder, null);
+			        contentBuilder.endObject();
 			        contentBuilder.field("size", 0);
 			        contentBuilder.endObject();
 					exchange.getIn().setBody(contentBuilder);
@@ -270,6 +275,7 @@ public class RouteBuilder extends SpringRouteBuilder {
           .log("searchRequest: ${body.string()}")
 		  .to("elasticsearch://local?operation=SEARCH")
           .log("searchResponse: ${body}")
+          //TODO: Process SearchResponse
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
 //        {

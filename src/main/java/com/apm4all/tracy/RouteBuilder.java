@@ -273,9 +273,9 @@ public class RouteBuilder extends SpringRouteBuilder {
 					    .subAggregation(
 					    	    AggregationBuilders
 					    	        .filters("agg")
-					    	            .filter("errors", FilterBuilders.rangeFilter("status").gte(500))
-					    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
 					    	            .filter("invocations", FilterBuilders.matchAllFilter())
+					    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
+					    	            .filter("errors", FilterBuilders.rangeFilter("status").gte(500))
 					    	            .filter("satisfied", FilterBuilders.andFilter(
 					    	            		FilterBuilders.rangeFilter("status").lt(500),
 					    	            		FilterBuilders.rangeFilter("msecElapsed").lt(rttTolerating)))

@@ -28,6 +28,7 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -35,6 +36,7 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -270,9 +272,12 @@ public class RouteBuilder extends SpringRouteBuilder {
 						.dateHistogram("timeBuckets")
 					    .field("@timestamp")
 					    .interval(DateHistogram.Interval.MINUTE)
+					    // min_doc_count does not seem to work with DateHistogram.
+					    // May need to use Range or else fill-in for empty (not returned) buckets
+					    .minDocCount(0) 
 					    .subAggregation(
 					    	    AggregationBuilders
-					    	        .filters("agg")
+					    	        .filters("counters")
 					    	            .filter("invocations", FilterBuilders.matchAllFilter())
 					    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
 					    	            .filter("errors", FilterBuilders.rangeFilter("status").gte(500))
@@ -299,9 +304,36 @@ public class RouteBuilder extends SpringRouteBuilder {
 //					System.out.println("===========================");
 				}
 			})
-          .log("searchRequest: ${body.string()}")
+          .choice()
+            .when(simple("${in.header.debug} == true"))
+            	.log("searchRequest: ${body.string()}")
+            	.end()
 		  .to("elasticsearch://local?operation=SEARCH")
-          .log("searchResponse: ${body}")
+          .choice()
+            .when(simple("${in.header.debug} == true"))
+            	.log("searchResponse: ${body}")
+            	.end()
+          .process(new Processor()	{
+			@Override
+			public void process(Exchange exchange) throws Exception {
+				SearchResponse sr = exchange.getIn().getBody(SearchResponse.class);
+				String debug = (String) exchange.getIn().getHeader("debug", "false");
+				DateHistogram agg = sr.getAggregations().get("timeBuckets");
+				// For each entry
+				for (DateHistogram.Bucket entry : agg.getBuckets()) {
+				    String key = entry.getKey();                // Key
+				    Number nkey = entry.getKeyAsNumber();
+				    Filters f = entry.getAggregations().get("counters");
+				    for (Filters.Bucket bucket : f.getBuckets())	{
+				    	if(debug.equals("true"))	{
+				    		System.out.println( "key [" + key + "], " 
+				    				+ "epoch [" + nkey.longValue() + "], "
+				    				+ bucket.getKey() + " [" + bucket.getDocCount() + "]");
+				    	}
+				    }
+				}
+			}
+          })
           //TODO: Process SearchResponse
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search

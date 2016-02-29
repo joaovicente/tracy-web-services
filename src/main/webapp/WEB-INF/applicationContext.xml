@@ -36,6 +36,9 @@
 	<!-- a bean for taskAnalysis services -->
 	<bean id="taskAnalysisService" class="com.apm4all.tracy.services.TaskAnalysisService" />
 	
+	<!-- a bean for esQueryProcessor -->
+	<bean id="esQueryProcessor" class="com.apm4all.tracy.backend.EsQueryProcessor" />
+	
   <!-- Camel Context -->     
   <camelContext xmlns="http://camel.apache.org/schema/spring">
     <jmxAgent id="agent" createConnector="true" registryPort="1099"/>

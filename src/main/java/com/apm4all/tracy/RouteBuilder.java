@@ -251,59 +251,8 @@ public class RouteBuilder extends SpringRouteBuilder {
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
-          .process(new Processor()	{
-				@Override
-				public void process(Exchange exchange) throws Exception {
-					// "bool" Restrict results by time range and match criteria
-					long now = System.currentTimeMillis();
-					long latest = now - now % 60000 ; // Now rounded to the minute
-					long earliest = latest - 60000 * 15; // last 15 minutes
-					int rttTolerating = 200;
-					int rttFrustrated = rttTolerating*4;
-					BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-							// TODO: For improved performance, filtering should be done at index level as well to avoid accessing uneccessary indexes
-							.must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))
-							.must(QueryBuilders.matchQuery("component", "hello-tracy"))
-							.must(QueryBuilders.matchQuery("label", "outer"));
-//							.queryString("\"component\":\"hello-tracy\"").analyzeWildcard(true);
-					// "aggs" date histogram aggregation
-					@SuppressWarnings("rawtypes")
-					AggregationBuilder aggregationBuilder = AggregationBuilders
-						.dateHistogram("timeBuckets")
-					    .field("@timestamp")
-					    .interval(DateHistogram.Interval.MINUTE)
-					    // min_doc_count does not seem to work with DateHistogram.
-					    // May need to use Range or else fill-in for empty (not returned) buckets
-					    .minDocCount(0) 
-					    .subAggregation(
-					    	    AggregationBuilders
-					    	        .filters("counters")
-					    	            .filter("invocations", FilterBuilders.matchAllFilter())
-					    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
-					    	            .filter("errors", FilterBuilders.rangeFilter("status").gte(500))
-					    	            .filter("satisfied", FilterBuilders.andFilter(
-					    	            		FilterBuilders.rangeFilter("status").lt(500),
-					    	            		FilterBuilders.rangeFilter("msecElapsed").lt(rttTolerating)))
-					    	            .filter("tolerating", FilterBuilders.andFilter(
-					    	            		FilterBuilders.rangeFilter("status").lt(500),
-					    	            		FilterBuilders.rangeFilter("msecElapsed").gt(rttTolerating).lt(rttFrustrated)))
-					    	            .filter("frustrated", FilterBuilders.andFilter(
-					    	            		FilterBuilders.rangeFilter("status").lt(500),
-					    	            		FilterBuilders.rangeFilter("msecElapsed").gt(rttFrustrated)))
-					    		);
-			        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
-			        queryBuilder.toXContent(contentBuilder, null);
-			        contentBuilder.startObject("aggs");
-			        aggregationBuilder.toXContent(contentBuilder, null);
-			        contentBuilder.endObject();
-			        contentBuilder.field("size", 0);
-			        contentBuilder.endObject();
-					exchange.getIn().setBody(contentBuilder);
-//					System.out.println("===========================");
-//					System.out.println(contentBuilder.string());
-//					System.out.println("===========================");
-				}
-			})
+          // TODO: Ensure taskConfig header is available at this point
+          .bean("esQueryProcessor", "buildOverviewSearchRequest(${header.taskConfig})") // returns SearchRequest
           .choice()
             .when(simple("${in.header.debug} == true"))
             	.log("searchRequest: ${body.string()}")
@@ -313,28 +262,9 @@ public class RouteBuilder extends SpringRouteBuilder {
             .when(simple("${in.header.debug} == true"))
             	.log("searchResponse: ${body}")
             	.end()
-          .process(new Processor()	{
-			@Override
-			public void process(Exchange exchange) throws Exception {
-				SearchResponse sr = exchange.getIn().getBody(SearchResponse.class);
-				String debug = (String) exchange.getIn().getHeader("debug", "false");
-				DateHistogram agg = sr.getAggregations().get("timeBuckets");
-				// For each entry
-				for (DateHistogram.Bucket entry : agg.getBuckets()) {
-				    String key = entry.getKey();                // Key
-				    Number nkey = entry.getKeyAsNumber();
-				    Filters f = entry.getAggregations().get("counters");
-				    for (Filters.Bucket bucket : f.getBuckets())	{
-				    	if(debug.equals("true"))	{
-				    		System.out.println( "key [" + key + "], " 
-				    				+ "epoch [" + nkey.longValue() + "], "
-				    				+ bucket.getKey() + " [" + bucket.getDocCount() + "]");
-				    	}
-				    }
-				}
-			}
-          })
-          //TODO: Process SearchResponse
+          // handles searchResponse body and populates TASK_MEASUREMENT header
+          .bean("esQueryProcessor", "handleOverviewSearchResponse(${header.taskConfig}, ${header.taskMeasurement}, ${body})")
+          // Process SearchResponse
           .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
 //        {

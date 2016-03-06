@@ -3,7 +3,7 @@ package com.apm4all.tracy.apimodel;
 public class TaskConfig {
 	private String application;
 	private String task;
-	private String definingFilter = "component:\"hello-tracy\" AND labe:\"outer\"";
+	private String definingFilter = "component:\"hello-tracy\" AND label:\"outer\"";
 	private TaskConfigMeasurement measurement = new TaskConfigMeasurement();
 	
 	public static class TaskConfigMeasurement {
@@ -12,6 +12,7 @@ public class TaskConfig {
 		private int lag = 0;
 		private int rttTolerating = 200;
 		private int rttFrustrated = 800;
+		private String rttUnit = "ms"; // ms, s, h, d
 		
 		public int getSpan() {
 			return span;
@@ -42,6 +43,12 @@ public class TaskConfig {
 		}
 		public void setRttFrustrated(int rttFrustrated) {
 			this.rttFrustrated = rttFrustrated;
+		}
+		public String getRttUnit() {
+			return this.rttUnit; 
+		}
+		public void setRttUnit(String rttUnit) {
+			this.rttUnit = rttUnit; 
 		}
 	}
 

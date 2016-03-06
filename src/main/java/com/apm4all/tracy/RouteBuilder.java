@@ -28,16 +28,6 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.filters.Filters;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -251,8 +241,9 @@ public class RouteBuilder extends SpringRouteBuilder {
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
 //		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
+          .bean("esQueryProcessor", "initMeasurement")
           // TODO: Ensure taskConfig header is available at this point
-          .bean("esQueryProcessor", "buildOverviewSearchRequest(${header.taskConfig})") // returns SearchRequest
+          .bean("esQueryProcessor", "buildOverviewSearchRequest") // returns SearchRequest
           .choice()
             .when(simple("${in.header.debug} == true"))
             	.log("searchRequest: ${body.string()}")
@@ -263,9 +254,9 @@ public class RouteBuilder extends SpringRouteBuilder {
             	.log("searchResponse: ${body}")
             	.end()
           // handles searchResponse body and populates TASK_MEASUREMENT header
-          .bean("esQueryProcessor", "handleOverviewSearchResponse(${header.taskConfig}, ${header.taskMeasurement}, ${body})")
+          .bean("esQueryProcessor", "handleOverviewSearchResponse");
           // Process SearchResponse
-          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
+//          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
 //        {
 //        "size": 0,

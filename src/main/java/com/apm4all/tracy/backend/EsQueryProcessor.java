@@ -268,7 +268,9 @@ public class EsQueryProcessor {
 			@Header(TIME_FRAME) TimeFrame timeFrame,
 			@Header(TASK_MEASUREMENT) TaskMeasurement taskMeasurement,
 			@Body SearchResponse searchResponse) {
-		
+	
+		ArrayList<Double> p95 = new ArrayList<Double>();
+		ArrayList<Double> max = new ArrayList<Double>();
 		DateHistogram agg = searchResponse.getAggregations().get("timeBuckets");
 
 		for (long time=timeFrame.getEarliest() ; time < timeFrame.getLatest() ; time = time+timeFrame.getSnap())	{
@@ -281,6 +283,8 @@ public class EsQueryProcessor {
 //TODO: Use Max
 				 
 				System.out.println("Max [" + stats.getMax() + "]");
+				max.add(stats.getMax());
+				
 				Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
 				
 				for (Percentile entry : percentiles) {
@@ -289,6 +293,8 @@ public class EsQueryProcessor {
 //TODO: Use p95
 				    	double value = entry.getValue();        // Value
 				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
+				    	p95.add(value);
+				    	
 				    }
 				}
 			
@@ -304,7 +310,15 @@ public class EsQueryProcessor {
 				System.out.println("latencyHistogram [700-800], value [" +  latencyHistogram.getBucketByKey("700-800").getDocCount() + "]");
 				System.out.println("latencyHistogram [>800], value [" +  latencyHistogram.getBucketByKey(">800").getDocCount() + "]");
 			}
+			else	{
+				p95.add(null);
+				max.add(null);
+			}
 		}
+		VitalsTimechart vitalsTimechart = taskMeasurement.getVitalsTimechart();
+		vitalsTimechart.setMax(max);
+		vitalsTimechart.setP95(p95);
+		
 		return taskMeasurement;
 	}
 }

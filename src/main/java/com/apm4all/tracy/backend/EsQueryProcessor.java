@@ -19,7 +19,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters;
+import org.elasticsearch.search.aggregations.bucket.filters.Filters.Bucket;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
+import org.elasticsearch.search.aggregations.metrics.stats.Stats;
+import org.elasticsearch.search.aggregations.metrics.percentiles.Percentile;
+import org.elasticsearch.search.aggregations.metrics.percentiles.Percentiles;
 
 import com.apm4all.tracy.apimodel.SingleApdexTimechart;
 import com.apm4all.tracy.apimodel.TaskConfig;
@@ -70,7 +74,6 @@ public class EsQueryProcessor {
 			@Header(TIME_FRAME) TimeFrame timeFrame) throws IOException	{
 		// "bool" Restrict results by time range and match criteria
 		
-		System.out.println(timeFrame);
 		long earliest = timeFrame.getEarliest();
 		long latest = timeFrame.getLatest();
 		int rttTolerating = taskConfig.getMeasurement().getRttTolerating();
@@ -143,7 +146,6 @@ public class EsQueryProcessor {
 		List<Integer> vitalsCount = new ArrayList<Integer>();
 		List<Integer> vitalsErrors = new ArrayList<Integer>();
 		
-		
 		List<Double> apdexScores = new ArrayList<Double>();
 		for (long time=timeFrame.getEarliest() ; time < timeFrame.getLatest() ; time = time+timeFrame.getSnap())	{
 			DateHistogram.Bucket histogramBucket = agg.getBucketByKey(time);
@@ -203,5 +205,106 @@ public class EsQueryProcessor {
 		return taskMeasurement;
 	}
 
+	public XContentBuilder buildSuccessStatsSearchRequest(
+			@Header(TASK_CONFIG) TaskConfig taskConfig, 
+			@Header(TIME_FRAME) TimeFrame timeFrame) throws IOException	{
+		// "bool" Restrict results by time range and match criteria
+		
+		long earliest = timeFrame.getEarliest();
+		long latest = timeFrame.getLatest();
+		int rttTolerating = taskConfig.getMeasurement().getRttTolerating();
+		int rttFrustrated = taskConfig.getMeasurement().getRttFrustrated();
+		String taskDefiningFilter = taskConfig.getDefiningFilter();
+		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+				// TODO: For improved performance, filtering should be done at index level as well to avoid accessing unnecessary indexes
+				.must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))
+				.must(QueryBuilders.queryStringQuery(taskDefiningFilter));
+		// "aggs" date histogram aggregation
+		@SuppressWarnings("rawtypes")
+		AggregationBuilder aggregationBuilder = AggregationBuilders
+			.dateHistogram("timeBuckets")
+		    .field("@timestamp")
+		    .interval(DateHistogram.Interval.MINUTE)
+		    // min_doc_count does not seem to work with DateHistogram.
+		    .minDocCount(0) 
+		    .subAggregation(
+		    	    AggregationBuilders
+		    	        .filters("counters")
+		    	            .filter("success", FilterBuilders.rangeFilter("status").lt(500))
+		    	            	.subAggregation(AggregationBuilders
+		    	            		.percentiles("percentiles")
+		    	            		.field("msecElapsed")
+		    	            		.percentiles(50.0, 95.0, 99.0))
+		    	            	.subAggregation(AggregationBuilders
+		    	            		.stats("stats")
+		    	            		.field("msecElapsed"))
+		    	            	.subAggregation(AggregationBuilders
+		    	            		.filters("latencyHistogram")
+		    	            		.filter("0-100", FilterBuilders.rangeFilter("msecElapsed").gt(0).lte(100))
+		    	            		.filter("100-200", FilterBuilders.rangeFilter("msecElapsed").gt(100).lte(200))
+		    	            		.filter("200-300", FilterBuilders.rangeFilter("msecElapsed").gt(200).lte(300))
+		    	            		.filter("300-400", FilterBuilders.rangeFilter("msecElapsed").gt(300).lte(400))
+		    	            		.filter("400-500", FilterBuilders.rangeFilter("msecElapsed").gt(400).lte(500))
+		    	            		.filter("500-600", FilterBuilders.rangeFilter("msecElapsed").gt(600).lte(600))
+		    	            		.filter("600-700", FilterBuilders.rangeFilter("msecElapsed").gt(600).lte(700))
+		    	            		.filter("700-800", FilterBuilders.rangeFilter("msecElapsed").gt(700).lte(800))
+		    	            		.filter(">800", FilterBuilders.rangeFilter("msecElapsed").gt(800))
+		    		));
+        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
+        queryBuilder.toXContent(contentBuilder, null);
+        contentBuilder.startObject("aggs");
+        aggregationBuilder.toXContent(contentBuilder, null);
+        contentBuilder.endObject();
+        contentBuilder.field("size", 0);
+        contentBuilder.endObject();
+//        System.out.println("*** Query ***");
+//        System.out.println(contentBuilder.string());
+		return contentBuilder;
+	}
 
+
+	public TaskMeasurement handleSucessStatsSearchResponse(
+			@Header(TASK_CONFIG) TaskConfig taskConfig, 
+			@Header(TIME_FRAME) TimeFrame timeFrame,
+			@Header(TASK_MEASUREMENT) TaskMeasurement taskMeasurement,
+			@Body SearchResponse searchResponse) {
+		
+		DateHistogram agg = searchResponse.getAggregations().get("timeBuckets");
+
+		for (long time=timeFrame.getEarliest() ; time < timeFrame.getLatest() ; time = time+timeFrame.getSnap())	{
+			DateHistogram.Bucket histogramBucket = agg.getBucketByKey(time);
+			if (histogramBucket != null)	{
+				// If ES response contains this time bucket, populate from ES
+				Filters counters = histogramBucket.getAggregations().get("counters");
+				Bucket satisfiedBucket = counters.getBucketByKey("success");
+				Stats stats = satisfiedBucket.getAggregations().get("stats");
+//TODO: Use Max
+				 
+				System.out.println("Max [" + stats.getMax() + "]");
+				Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
+				
+				for (Percentile entry : percentiles) {
+				    double percent = entry.getPercent();    // Percent
+				    if (percent == 95.0)	{
+//TODO: Use p95
+				    	double value = entry.getValue();        // Value
+				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
+				    }
+				}
+			
+				Filters latencyHistogram = satisfiedBucket.getAggregations().get("latencyHistogram");
+//TODO: Use latencyHistogram
+				System.out.println("latencyHistogram [0-100], value [" +  latencyHistogram.getBucketByKey("0-100").getDocCount() + "]");
+				System.out.println("latencyHistogram [100-200], value [" +  latencyHistogram.getBucketByKey("100-200").getDocCount() + "]");
+				System.out.println("latencyHistogram [200-300], value [" +  latencyHistogram.getBucketByKey("200-300").getDocCount() + "]");
+				System.out.println("latencyHistogram [300-400], value [" +  latencyHistogram.getBucketByKey("300-400").getDocCount() + "]");
+				System.out.println("latencyHistogram [400-500], value [" +  latencyHistogram.getBucketByKey("400-500").getDocCount() + "]");
+				System.out.println("latencyHistogram [500-600], value [" +  latencyHistogram.getBucketByKey("500-600").getDocCount() + "]");
+				System.out.println("latencyHistogram [600-700], value [" +  latencyHistogram.getBucketByKey("600-700").getDocCount() + "]");
+				System.out.println("latencyHistogram [700-800], value [" +  latencyHistogram.getBucketByKey("700-800").getDocCount() + "]");
+				System.out.println("latencyHistogram [>800], value [" +  latencyHistogram.getBucketByKey(">800").getDocCount() + "]");
+			}
+		}
+		return taskMeasurement;
+	}
 }

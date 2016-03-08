@@ -259,7 +259,19 @@ public class RouteBuilder extends SpringRouteBuilder {
             	.log("searchResponse: ${body}")
             	.end()
           // handles searchResponse body and populates TASK_MEASUREMENT header
-          .bean("esQueryProcessor", "handleOverviewSearchResponse");
+          .bean("esQueryProcessor", "handleOverviewSearchResponse")
+          .bean("esQueryProcessor", "buildSuccessStatsSearchRequest") // returns SearchRequest
+          .choice()
+            .when(simple("${in.header.debug} == true"))
+            	.log("searchRequest: ${body.string()}")
+            	.end()
+		  .to("elasticsearch://local?operation=SEARCH")
+          .choice()
+            .when(simple("${in.header.debug} == true"))
+            	.log("searchResponse: ${body}")
+            	.end()
+          .bean("esQueryProcessor", "handleSucessStatsSearchResponse"); // returns SearchRequest
+        
           // Process SearchResponse
 //          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search

@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.camel.Body;
 import org.apache.camel.Header;
 import org.apache.camel.Headers;
-import org.apache.camel.Body;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -28,6 +28,8 @@ import com.apm4all.tracy.apimodel.VitalsTimechart;
 import com.apm4all.tracy.util.TimeFrame;
 
 public class EsQueryProcessor {
+	public static final String APPLICATION = "application";
+	public static final String TASK = "task";
 	public static final String TASK_CONFIG = "taskConfig";
 	public static final String TIME_FRAME = "timeFrame";
 	public static final String EARLIEST = "earliest";
@@ -36,6 +38,8 @@ public class EsQueryProcessor {
 	public static final String TASK_MEASUREMENT = "taskMeasurement";
 	
 	public void initMeasurement(@Headers Map<String, Object> headers,
+			@Header(APPLICATION) String application,
+			@Header(TASK) String task,
 			@Header(TASK_CONFIG) TaskConfig taskConfig,
 			@Header(EARLIEST) String earliest,
 			@Header(LATEST) String latest,
@@ -53,11 +57,11 @@ public class EsQueryProcessor {
 		headers.put(TASK_MEASUREMENT, taskMeasurement);
 	
 		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
-		singleApdexTimechart.setApplication(taskConfig.getApplication());
+		singleApdexTimechart.setApplication(application);
+		singleApdexTimechart.setTask(task);
 		singleApdexTimechart.setRttF(taskConfig.getMeasurement().getRttFrustrated());
 		singleApdexTimechart.setRttT(taskConfig.getMeasurement().getRttTolerating());
 		singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
-		singleApdexTimechart.setTask(taskConfig.getTask());
 	}
 	
 	
@@ -73,7 +77,7 @@ public class EsQueryProcessor {
 		int rttFrustrated = taskConfig.getMeasurement().getRttFrustrated();
 		String taskDefiningFilter = taskConfig.getDefiningFilter();
 		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-				// TODO: For improved performance, filtering should be done at index level as well to avoid accessing uneccessary indexes
+				// TODO: For improved performance, filtering should be done at index level as well to avoid accessing unnecessary indexes
 				.must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))
 				.must(QueryBuilders.queryStringQuery(taskDefiningFilter));
 		// "aggs" date histogram aggregation
@@ -83,7 +87,6 @@ public class EsQueryProcessor {
 		    .field("@timestamp")
 		    .interval(DateHistogram.Interval.MINUTE)
 		    // min_doc_count does not seem to work with DateHistogram.
-		    // May need to use Range or else fill-in for empty (not returned) buckets
 		    .minDocCount(0) 
 		    .subAggregation(
 		    	    AggregationBuilders
@@ -167,7 +170,8 @@ public class EsQueryProcessor {
 				}
 			}
 			else	{
-				// If ES response does not contain this time bucket, populate defaults
+				// When handling response need to fill-in for empty (not returned) buckets
+				// min_doc_count does not seem to work with DateHistogram.
 				System.out.println("--- TIME: " + time);
 			}
 			vitalsTimeSequence.add(time);
@@ -185,13 +189,12 @@ public class EsQueryProcessor {
 						+ bucket.getKey() + " [" + bucket.getDocCount() + "]");
 			}
 		}
-		// Populate TaskMeasurement with Overview SearchResponse data
-		// TODO: Populate SingleApdexTimechart: timeSequence, application, task, rttUnit, rttT, rttF, apdexScores 
+		// Populate SingleApdexTimechart: timeSequence, apdexScores
 		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
 		singleApdexTimechart.setTimeSequence(apdexTimeSequence);
 		singleApdexTimechart.setApdexScores(apdexScores);
 		
-		// TODO: Populate VitalsTimeChart: timeSequence, count, errors (skip p95 and max)
+		// Populate VitalsTimeChart: timeSequence, count, errors (skip p95 and max)
 		VitalsTimechart vitalsTimeChart = taskMeasurement.getVitalsTimechart(); 
 		vitalsTimeChart.setTimeSequence(vitalsTimeSequence);
 		vitalsTimeChart.setCount(vitalsCount);

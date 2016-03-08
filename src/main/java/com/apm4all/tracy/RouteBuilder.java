@@ -35,6 +35,10 @@ import org.joda.time.format.DateTimeFormatter;
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 
 public class RouteBuilder extends SpringRouteBuilder {
 
@@ -170,7 +174,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 		        	delayInMsec = new Double(Math.random() * 200).longValue() + 100;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(OUTER);
-					exchange.getIn().setBody(Tracy.getEventsAsMaps());
+					exchange.getIn().setBody(Tracy.getEventsAsJson());
 		    		Tracy.clearContext();
 				}
 			})
@@ -212,20 +216,21 @@ public class RouteBuilder extends SpringRouteBuilder {
           .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> tracy = (Map<String, Object>) exchange.getIn().getBody(); 
-					DateTime dt = new DateTime(Long.parseLong((String) tracy.get("msecBefore")));
+			        ObjectMapper m = new ObjectMapper();
+			        JsonNode rootNode = m.readTree((String)exchange.getIn().getBody());
+					DateTime dt = new DateTime(rootNode.path("msecBefore").asLong());
 					String esTimestamp = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
-					tracy.put("@timestamp", esTimestamp);
+					((ObjectNode) rootNode).put("@timestamp", esTimestamp);
 					StringBuilder index = new StringBuilder();
 					DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy.MM.dd");
 					String dateString = fmt.print(dt);
-					index.append("tracy-").append(tracy.get("component"))
+					index.append("tracy-").append(rootNode.path("component").textValue())
 						.append("-").append(dateString);
 					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, index.toString());
 					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, "tracy");
-					String indexId = tracy.get("taskId") + "_" + tracy.get("optId");
+					String indexId = rootNode.path("taskId").textValue() + "_" + rootNode.path("optId").textValue();
 					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_ID, indexId);
+					exchange.getIn().setBody(m.writer().writeValueAsString(rootNode));
 				}
 			})          
 //          .log("${body}")

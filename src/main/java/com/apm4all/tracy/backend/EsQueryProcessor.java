@@ -120,6 +120,12 @@ public class EsQueryProcessor {
 		return contentBuilder;
 	}
 
+	private Double round(double number, int digits)	{
+		BigDecimal bd = new BigDecimal(number);
+		bd = bd.setScale(digits, RoundingMode.HALF_UP);
+		return bd.doubleValue();
+	}
+	
 	private Double calculateApdexScore(long invocations, long satisfied, long tolerating) {
 		Double apdexScore;
 		if(invocations == 0) {
@@ -130,9 +136,7 @@ public class EsQueryProcessor {
 							+ ", invocations " + invocations
 							+ ", satisfied " + satisfied
 							+ ", tolerating " + tolerating);
-		BigDecimal bd = new BigDecimal(apdexScore);
-		bd = bd.setScale(2, RoundingMode.HALF_UP);
-		return bd.doubleValue();
+		return round(apdexScore, 2);
 	}
 
 	public TaskMeasurement handleOverviewSearchResponse(
@@ -317,7 +321,7 @@ public class EsQueryProcessor {
 				Stats stats = satisfiedBucket.getAggregations().get("stats");
                 // Populate Max
 				System.out.println("Max [" + stats.getMax() + "]");
-				max.add(stats.getMax());
+				max.add(round(stats.getMax(),0));
 				
 				Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
 				
@@ -327,13 +331,12 @@ public class EsQueryProcessor {
                         // Populate p95
 				    	double value = entry.getValue();        // Value
 				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
-				    	p95.add(value);
+				    	p95.add(round(value,0));
 				    }
 				}
 			
 				Filters latencyHistogram = satisfiedBucket.getAggregations().get("latencyHistogram");
-                //TODO: Use latencyHistogram
-
+                // Populate latencyHistogram
 				int i = 0;
 				for (LatencyHistogramRow row : latencyHistogramRows.asList())	{ // Sort by latency descending
 					// latency histogram count
@@ -344,22 +347,13 @@ public class EsQueryProcessor {
 					System.out.println("latencyHistogram [" + row.getLabel() // 0-100
 							+ "], value [" +  latencyHistogram.getBucketByKey(row.getLabel()).getDocCount() + "]");
 				}
-				
-				System.out.println("latencyHistogram [0-100], value [" +  latencyHistogram.getBucketByKey("0-100").getDocCount() + "]");
-				System.out.println("latencyHistogram [100-200], value [" +  latencyHistogram.getBucketByKey("100-200").getDocCount() + "]");
-				System.out.println("latencyHistogram [200-300], value [" +  latencyHistogram.getBucketByKey("200-300").getDocCount() + "]");
-				System.out.println("latencyHistogram [300-400], value [" +  latencyHistogram.getBucketByKey("300-400").getDocCount() + "]");
-				System.out.println("latencyHistogram [400-500], value [" +  latencyHistogram.getBucketByKey("400-500").getDocCount() + "]");
-				System.out.println("latencyHistogram [500-600], value [" +  latencyHistogram.getBucketByKey("500-600").getDocCount() + "]");
-				System.out.println("latencyHistogram [600-700], value [" +  latencyHistogram.getBucketByKey("600-700").getDocCount() + "]");
-				System.out.println("latencyHistogram [700-800], value [" +  latencyHistogram.getBucketByKey("700-800").getDocCount() + "]");
-				System.out.println("latencyHistogram [>800], value [" +  latencyHistogram.getBucketByKey(">800").getDocCount() + "]");
 			}
 			else	{
 				p95.add(null);
 				max.add(null);
 			}
 		}
+		// Add VitalsTimechart data
 		VitalsTimechart vitalsTimechart = taskMeasurement.getVitalsTimechart();
 		vitalsTimechart.setMax(max);
 		vitalsTimechart.setP95(p95);
@@ -369,9 +363,6 @@ public class EsQueryProcessor {
 		latencyHistogram.setBins(bins);
 		latencyHistogram.setCount(count);
 		latencyHistogram.setRttZone(rttZone);
-		
-		
-		
 		return taskMeasurement;
 	}
 }

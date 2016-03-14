@@ -20,6 +20,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters.Bucket;
+import org.elasticsearch.search.aggregations.bucket.filters.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
 import org.elasticsearch.search.aggregations.metrics.stats.Stats;
 import org.elasticsearch.search.aggregations.metrics.percentiles.Percentile;
@@ -212,6 +213,22 @@ public class EsQueryProcessor {
 		return taskMeasurement;
 	}
 
+	private FiltersAggregationBuilder buildLatencyHistogramFilter(TaskConfig taskConfig)	{
+        LatencyHistogramRows latencyHistogramRows = new LatencyHistogramRows(
+                        taskConfig.getMeasurement().getRttTolerating(), 
+                        taskConfig.getMeasurement().getRttFrustrated());
+        FiltersAggregationBuilder builder = AggregationBuilders.filters("latencyHistogram");
+        for (LatencyHistogramRow row : latencyHistogramRows.asList())	{ // Sort by latency descending
+        		if (row.hasUpperLimit())	{
+        			builder = builder.filter(row.getLabel(), FilterBuilders.rangeFilter("msecElapsed").gt(row.getLowerLimit()).lte(row.getUpperLimit()));
+        		}
+        		else	{
+        			builder = builder.filter(row.getLabel(), FilterBuilders.rangeFilter("msecElapsed").gt(row.getLowerLimit()));
+        		}
+        }
+		return builder;
+	}
+	
 	public XContentBuilder buildSuccessStatsSearchRequest(
 			@Header(TASK_CONFIG) TaskConfig taskConfig, 
 			@Header(TIME_FRAME) TimeFrame timeFrame) throws IOException	{
@@ -219,8 +236,6 @@ public class EsQueryProcessor {
 		
 		long earliest = timeFrame.getEarliest();
 		long latest = timeFrame.getLatest();
-		int rttTolerating = taskConfig.getMeasurement().getRttTolerating();
-		int rttFrustrated = taskConfig.getMeasurement().getRttFrustrated();
 		String taskDefiningFilter = taskConfig.getDefiningFilter();
 		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
 				// TODO: For improved performance, filtering should be done at index level as well to avoid accessing unnecessary indexes
@@ -245,38 +260,9 @@ public class EsQueryProcessor {
 		    	            	.subAggregation(AggregationBuilders
 		    	            		.stats("stats")
 		    	            		.field("msecElapsed"))
-		    	            	.subAggregation(AggregationBuilders
-		    	            		.filters("latencyHistogram")
-		    	            		.filter("0-100", FilterBuilders.rangeFilter("msecElapsed").gt(0).lte(100))
-		    	            		.filter("100-200", FilterBuilders.rangeFilter("msecElapsed").gt(100).lte(200))
-		    	            		.filter("200-300", FilterBuilders.rangeFilter("msecElapsed").gt(200).lte(300))
-		    	            		.filter("300-400", FilterBuilders.rangeFilter("msecElapsed").gt(300).lte(400))
-		    	            		.filter("400-500", FilterBuilders.rangeFilter("msecElapsed").gt(400).lte(500))
-		    	            		.filter("500-600", FilterBuilders.rangeFilter("msecElapsed").gt(600).lte(600))
-		    	            		.filter("600-700", FilterBuilders.rangeFilter("msecElapsed").gt(600).lte(700))
-		    	            		.filter("700-800", FilterBuilders.rangeFilter("msecElapsed").gt(700).lte(800))
-		    	            		.filter(">800", FilterBuilders.rangeFilter("msecElapsed").gt(800))
+		    	            	.subAggregation(buildLatencyHistogramFilter(taskConfig)
 		    		));
-		
-		// TODO: Populate latencyHistogramFilters
-//        LatencyHistogramRows latencyHistogramRows = new LatencyHistogramRows(
-//                        taskConfig.getMeasurement().getRttTolerating(), 
-//                        taskConfig.getMeasurement().getRttFrustrated());
-//        for (LatencyHistogramRow row : latencyHistogramRows.asList())	{ // Sort by latency descending
-//                // TODO: create filter using 
-//        		if (row.getUpperLimit != null)	{
-//        			.filter(row.getLabel()), FilterBuilders.rangeFilter("msecElapsed").gt(row.getLowerLimit()).lte(row.getUpperLimit()));
-//        		}
-//        		else	{
-//        			.filter(row.getLabel()), FilterBuilders.rangeFilter("msecElapsed").gt(row.getLowerLimit()));
-//        		}
-//        		row.
-//                System.out.println("latencyHistogram [" + row.getLabel() // 0-100
-//                                + "], value [" +  latencyHistogram.getBucketByKey(row.getLabel()).getDocCount() + "]");
-//        }
 
-		
-		
         XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
         queryBuilder.toXContent(contentBuilder, null);
         contentBuilder.startObject("aggs");

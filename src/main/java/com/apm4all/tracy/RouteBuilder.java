@@ -28,11 +28,17 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import com.apm4all.tracy.apimodel.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.TaskConfig;
 import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.TaskAnalysisFake;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,7 +95,22 @@ public class RouteBuilder extends SpringRouteBuilder {
             .get("/applications/{application}/measurement").description("Get measurement for an Application").outType(ApplicationMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
             	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")            	
+
+            .post("/applications/{application}/tasks/{task}/config").description("Set Task config").type(TaskConfig.class)
+              .param().name("application").type(path).description("The application").dataType("string").endParam()
+              .param().name("task").type(path).description("The task").dataType("string").endParam()
+                .to("direct:storeTaskConfig")
+                
+            .get("/applications/{application}/tasks/{task}/config").description("Get Task config").outType(TaskConfig.class)
+              .param().name("application").type(path).description("The application").dataType("string").endParam()
+              .param().name("task").type(path).description("The task").dataType("string").endParam()
+                // TODO: Build TaskConfig search query
+                // TODO: Run query against ES
+                // TODO: Build REST response
+                .to("direct:retrieveTaskConfigViaSearch")
+                //.to("bean:esQueryProcessor?method=buildTaskConfigDto")
             	
+            // TODO: Merge into ...{task}/measurement
             .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
               .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
@@ -108,8 +129,52 @@ public class RouteBuilder extends SpringRouteBuilder {
         
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
                .to("direct:toogleTracySimulation");
-            
-             
+
+        from("direct:retrieveTaskConfigViaGetById").routeId("retrieveTaskConfigViaGetById")
+          // FIXME: Use GET_BY_ID instead of SEARCH
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_ID, simple("${header.application}__${header.task}"))
+		  .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, constant("entities"))
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, constant("TaskConfig"))
+		  .to("elasticsearch://local?operation=GET_BY_ID")
+          .log("${body}")
+		  .to("bean:esQueryProcessor?method=prepareRetrievedTaskConfig");
+         // TODO: Try search instead
+        from("direct:retrieveTaskConfigViaSearch").routeId("retrieveTaskConfigViaSearch")
+		  .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, constant("entities"))
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, constant("TaskConfig"))
+          .process(new Processor()	{
+        	  @Override
+        	  public void process(Exchange exchange) throws Exception {
+        		  String filter = "application:\"demo\" AND task:\"hello-tracy-sim\"";
+        		  BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+        				  .must(QueryBuilders.queryStringQuery(filter));
+        		  XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
+        		  queryBuilder.toXContent(contentBuilder, null);
+        		  contentBuilder.endObject();
+        		  System.out.println( contentBuilder.string());
+        		  exchange.getIn().setBody(contentBuilder);
+        	  }
+          })
+		  .to("elasticsearch://local?operation=SEARCH")
+          .process(new Processor()	{
+        	  @Override
+        	  public void process(Exchange exchange) throws Exception {
+        		  SearchResponse response = exchange.getIn().getBody(SearchResponse.class);
+        		  String responseString = response.getHits().getAt(0).getSourceAsString();
+        		  System.out.println("=== " +responseString);
+        		  ObjectMapper mapper = new ObjectMapper();
+        		  TaskConfig taskConfig = mapper.readValue(responseString, TaskConfig.class);        		  
+				  exchange.getIn().setBody(taskConfig);
+        	  }
+          });
+          
+        from("direct:storeTaskConfig").routeId("storeTaskConfig")
+          .to("bean:esQueryProcessor?method=prepareToStoreTaskConfig")
+          .log("${body}")
+          .log("${headers}")
+          .setHeader(ElasticsearchConstants.PARAM_INDEX_ID, simple("${header.application}__${header.task}"))
+		  .to("elasticsearch://local?operation=INDEX");
+        
         from("direct:toogleTracySimulation").routeId("toogleTracySimulation")
           .setBody(simple(""))
           .process(new Processor()	{
@@ -238,10 +303,6 @@ public class RouteBuilder extends SpringRouteBuilder {
 		  .to("elasticsearch://local?operation=INDEX");
         
         from("direct:search").routeId("search")
-//          .setBody(simple("{ \"query\": { \"match_all\": {} } }"))
-//          .setBody(simple("{ \"query\": { \"match\" : { \"component\" : \"hello-tracy\" } } }"))
-//          .log("Request: ${body}")
-//          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-2016.02.19"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          

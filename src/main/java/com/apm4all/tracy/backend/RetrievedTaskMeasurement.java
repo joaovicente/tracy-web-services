@@ -6,11 +6,11 @@ import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.apimodel.VitalsTimechart;
 
 public class RetrievedTaskMeasurement implements TaskMeasurement {
+	private String application;
+	private String task;
 	private SingleApdexTimechart singleApdexTimechart;
 	private VitalsTimechart vitalsTimechart;
 	private LatencyHistogram latencyHistogram;
-	private String application;
-	private String task;
 	
 	public RetrievedTaskMeasurement(String application, String task) {
 		super();

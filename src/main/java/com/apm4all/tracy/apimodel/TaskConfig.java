@@ -1,10 +1,21 @@
 package com.apm4all.tracy.apimodel;
 
 public class TaskConfig {
+	static final String RTT_UNIT_MSEC = "ms";
+	static final String RTT_UNIT_SEC = "s";
+	static final String RTT_UNIT_HOUR = "h";
+	static final String RTT_UNIT_DAY = "d";
 	private String application;
 	private String task;
 	private String definingFilter = "component:\"hello-tracy\" AND label:\"outer\"";
 	private TaskConfigMeasurement measurement = new TaskConfigMeasurement();
+
+	public TaskConfig()	{ }
+	
+	public TaskConfig(String application, String task)	{
+		this.application = application;
+		this.task = task;
+	}
 	
 	public static class TaskConfigMeasurement {
 		private int span = 15 * 60 * 1000 ; // 15 minutes in msec
@@ -12,7 +23,7 @@ public class TaskConfig {
 		private int lag = 0;
 		private int rttTolerating = 200;
 		private int rttFrustrated = 800;
-		private String rttUnit = "ms"; // ms, s, h, d
+		private String rttUnit = RTT_UNIT_MSEC;
 		
 		public int getSpan() {
 			return span;

@@ -8,8 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.camel.Body;
+import org.apache.camel.Exchange;
 import org.apache.camel.Header;
 import org.apache.camel.Headers;
+import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -34,6 +37,8 @@ import com.apm4all.tracy.apimodel.VitalsTimechart;
 import com.apm4all.tracy.util.LatencyHistogramRows;
 import com.apm4all.tracy.util.LatencyHistogramRows.LatencyHistogramRow;
 import com.apm4all.tracy.util.TimeFrame;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EsQueryProcessor {
 	public static final String APPLICATION = "application";
@@ -54,7 +59,7 @@ public class EsQueryProcessor {
 			@Header(SNAP) String snap) {
 		// FIXME: A valid config must be supplied at this point 
 		if (taskConfig == null)	{
-			taskConfig = new TaskConfig();
+			taskConfig = new TaskConfig(application, task);
 			headers.put(TASK_CONFIG, taskConfig);
 		}
 		// Get earliest, latest and snap if provided
@@ -72,6 +77,31 @@ public class EsQueryProcessor {
 		singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
 	}
 	
+	public TaskConfig buildTaskConfigDto(@Header(APPLICATION) String application, @Header(TASK) String task)	{
+		System.out.println("*** buildTaskConfigDto ***");
+		return new TaskConfig(application, task);
+	}
+	
+	public String prepareToStoreTaskConfig(Exchange exchange, @Headers Map<String, Object> headers) throws JsonProcessingException	{
+		System.out.println("*** prepareToStoreTaskConfig ***");
+		ObjectMapper mapper = new ObjectMapper();
+		TaskConfig taskConfig = exchange.getIn().getBody(TaskConfig.class);
+		String taskConfigAsJson = mapper.writeValueAsString(taskConfig);
+		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
+		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
+		System.out.println(taskConfigAsJson);
+		return taskConfigAsJson;
+	}
+	
+	public String prepareRetrievedTaskConfig(@Body GetResponse response) throws InterruptedException	{
+		System.out.println("*** prepareRetrievedTaskConfig ***");
+		System.out.println(response);
+		System.out.println(response.getSource());
+		Map<String, Object> map = response.getSource();
+		String taskConfigString = (String) map.toString();
+//		System.out.println(taskConfigString);
+		return taskConfigString;
+	}
 	
 	public XContentBuilder buildOverviewSearchRequest(
 			@Header(TASK_CONFIG) TaskConfig taskConfig, 

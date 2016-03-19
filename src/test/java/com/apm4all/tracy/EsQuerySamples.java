@@ -2,6 +2,7 @@ package com.apm4all.tracy;
 
 import java.io.IOException;
 
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -19,7 +20,7 @@ public class EsQuerySamples {
 
 	@Test
 	public void testSuccessStatsQuery() throws IOException {
-		TaskConfig taskConfig = new TaskConfig();
+		TaskConfig taskConfig = new TaskConfig("myApplication", "myTask");
 		TimeFrame timeFrame = new TimeFrame(null, null, null, taskConfig);
 		
 		System.out.println(timeFrame);
@@ -66,4 +67,17 @@ public class EsQuerySamples {
         System.out.println( contentBuilder.string());
 	}
 
+	@Test
+	public void testFindTaskConfig() throws IOException {
+//		https://github.com/apache/camel/blob/camel-2.16.x/components/camel-elasticsearch/src/test/java/org/apache/camel/component/elasticsearch/ElasticsearchComponentTest.java#L161-L177		String taskDefiningFilter = "application:\"demo\" AND task:\"hello-tracy-sim\"";
+//		BoolQueryBuilder queryBuilder1 = QueryBuilders.boolQuery()
+//				.must(QueryBuilders.queryStringQuery(taskDefiningFilter));
+//		
+//        XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
+//        queryBuilder1.toXContent(contentBuilder, null);
+//        contentBuilder.endObject();
+//        System.out.println( contentBuilder.string());
+//        SearchResponse response = null;
+//        response.getHits().getAt(0).getSourceAsString();
+	}	
 }

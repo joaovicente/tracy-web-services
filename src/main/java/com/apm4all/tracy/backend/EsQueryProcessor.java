@@ -8,9 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.camel.Body;
+import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Header;
 import org.apache.camel.Headers;
+import org.apache.camel.Processor;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -41,6 +44,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EsQueryProcessor {
+	public ProducerTemplate getTemplate() {
+		return template;
+	}
+
+	public void setTemplate(ProducerTemplate template) {
+		this.template = template;
+	}
+
+
 	public static final String APPLICATION = "application";
 	public static final String TASK = "task";
 	public static final String TASK_CONFIG = "taskConfig";
@@ -49,7 +61,8 @@ public class EsQueryProcessor {
 	public static final String LATEST = "latest";
 	public static final String SNAP = "snap";
 	public static final String TASK_MEASUREMENT = "taskMeasurement";
-	
+	private ProducerTemplate template;
+
 	public void initMeasurement(@Headers Map<String, Object> headers,
 			@Header(APPLICATION) String application,
 			@Header(TASK) String task,
@@ -102,6 +115,28 @@ public class EsQueryProcessor {
 //		System.out.println(taskConfigString);
 		return taskConfigString;
 	}
+	
+	public TaskConfig retrieveTaskConfigViaSearch(CamelContext context, Exchange exchange, @Headers Map<String, Object> headers) throws IOException	{
+		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
+		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
+		String filter = "application:\"demo\" AND task:\"hello-tracy-sim\"";
+		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
+				.must(QueryBuilders.queryStringQuery(filter));
+		XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
+		queryBuilder.toXContent(contentBuilder, null);
+		contentBuilder.endObject();
+		System.out.println("=== Built query: " +  contentBuilder.string());
+		
+        SearchResponse response = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
+
+        // Handle response here
+        String responseString = response.getHits().getAt(0).getSourceAsString();
+        System.out.println("=== " +responseString);
+        ObjectMapper mapper = new ObjectMapper();
+        TaskConfig taskConfig = mapper.readValue(responseString, TaskConfig.class);        		  
+        return taskConfig;
+	}
+	
 	
 	public XContentBuilder buildOverviewSearchRequest(
 			@Header(TASK_CONFIG) TaskConfig taskConfig, 

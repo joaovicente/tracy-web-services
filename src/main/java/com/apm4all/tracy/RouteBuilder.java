@@ -107,8 +107,8 @@ public class RouteBuilder extends SpringRouteBuilder {
                 // TODO: Build TaskConfig search query
                 // TODO: Run query against ES
                 // TODO: Build REST response
-                .to("direct:retrieveTaskConfigViaSearch")
-                //.to("bean:esQueryProcessor?method=buildTaskConfigDto")
+                //.to("direct:retrieveTaskConfigViaSearch")
+                .to("bean:esQueryProcessor?method=retrieveTaskConfigViaSearch")
             	
             // TODO: Merge into ...{task}/measurement
             .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)

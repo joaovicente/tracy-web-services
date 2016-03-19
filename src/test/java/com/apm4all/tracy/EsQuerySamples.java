@@ -2,6 +2,9 @@ package com.apm4all.tracy;
 
 import java.io.IOException;
 
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
+import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -15,6 +18,7 @@ import org.junit.Test;
 
 import com.apm4all.tracy.apimodel.TaskConfig;
 import com.apm4all.tracy.util.TimeFrame;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EsQuerySamples {
 
@@ -80,4 +84,6 @@ public class EsQuerySamples {
 //        SearchResponse response = null;
 //        response.getHits().getAt(0).getSourceAsString();
 	}	
+	
+	
 }

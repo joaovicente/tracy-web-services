@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,15 +45,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EsQueryProcessor {
-	public ProducerTemplate getTemplate() {
-		return template;
-	}
-
-	public void setTemplate(ProducerTemplate template) {
-		this.template = template;
-	}
-
-
 	public static final String APPLICATION = "application";
 	public static final String TASK = "task";
 	public static final String TASK_CONFIG = "taskConfig";
@@ -62,6 +54,10 @@ public class EsQueryProcessor {
 	public static final String SNAP = "snap";
 	public static final String TASK_MEASUREMENT = "taskMeasurement";
 	private ProducerTemplate template;
+
+	public void setTemplate(ProducerTemplate template) {
+		this.template = template;
+	}
 
 	public void initMeasurement(@Headers Map<String, Object> headers,
 			@Header(APPLICATION) String application,
@@ -95,46 +91,55 @@ public class EsQueryProcessor {
 		return new TaskConfig(application, task);
 	}
 	
-	public String prepareToStoreTaskConfig(Exchange exchange, @Headers Map<String, Object> headers) throws JsonProcessingException	{
-		System.out.println("*** prepareToStoreTaskConfig ***");
-		ObjectMapper mapper = new ObjectMapper();
-		TaskConfig taskConfig = exchange.getIn().getBody(TaskConfig.class);
-		String taskConfigAsJson = mapper.writeValueAsString(taskConfig);
+	
+	
+	public void getTaskConfig(
+			Exchange exchange,
+			@Header(APPLICATION) String application, 
+			@Header(TASK) String task
+				) throws IOException	{
+		Map<String, Object> headers = new HashMap<String, Object>();
 		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
 		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
-		System.out.println(taskConfigAsJson);
-		return taskConfigAsJson;
-	}
-	
-	public String prepareRetrievedTaskConfig(@Body GetResponse response) throws InterruptedException	{
-		System.out.println("*** prepareRetrievedTaskConfig ***");
-		System.out.println(response);
-		System.out.println(response.getSource());
-		Map<String, Object> map = response.getSource();
-		String taskConfigString = (String) map.toString();
-//		System.out.println(taskConfigString);
-		return taskConfigString;
-	}
-	
-	public TaskConfig retrieveTaskConfigViaSearch(CamelContext context, Exchange exchange, @Headers Map<String, Object> headers) throws IOException	{
-		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
-		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
-		String filter = "application:\"demo\" AND task:\"hello-tracy-sim\"";
+		String filter = "application:\"" + application + "\" AND task:\"" + task + "\"";
 		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
 				.must(QueryBuilders.queryStringQuery(filter));
 		XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
 		queryBuilder.toXContent(contentBuilder, null);
 		contentBuilder.endObject();
-		System.out.println("=== Built query: " +  contentBuilder.string());
-		
+//		System.out.println("=== Built query: " +  contentBuilder.string());
         SearchResponse response = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
-
         // Handle response here
+        TaskConfig taskConfig;
+        if (response.getHits().getTotalHits() > 0)	{
         String responseString = response.getHits().getAt(0).getSourceAsString();
-        System.out.println("=== " +responseString);
-        ObjectMapper mapper = new ObjectMapper();
-        TaskConfig taskConfig = mapper.readValue(responseString, TaskConfig.class);        		  
-        return taskConfig;
+//        System.out.println("=== " +responseString);
+        	ObjectMapper mapper = new ObjectMapper();
+        	taskConfig = mapper.readValue(responseString, TaskConfig.class);
+        	exchange.getIn().setBody(taskConfig);
+        }
+        else	{
+        	// TODO: Add standardized error response and set httpStatus 
+        	taskConfig = new TaskConfig(application, task);
+        	exchange.getIn().setBody("not found");
+        }
+	}
+	
+	public void setTaskConfig(
+			Exchange exchange,
+			@Body TaskConfig taskConfig,
+			@Header(APPLICATION) String application, 
+			@Header(TASK) String task,
+			@Headers Map<String, Object> headers)
+					throws JsonProcessingException	{
+//		System.out.println("*** setTaskConfig ***");
+		ObjectMapper mapper = new ObjectMapper();
+		String taskConfigAsJson = mapper.writeValueAsString(taskConfig);
+		// TODO: Handle JsonProcessingException, define error message and set http status
+		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
+		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
+		headers.put(ElasticsearchConstants.PARAM_INDEX_ID, "TaskConfig");
+        template.requestBodyAndHeaders("elasticsearch://local?operation=INDEX", taskConfigAsJson, headers);
 	}
 	
 	

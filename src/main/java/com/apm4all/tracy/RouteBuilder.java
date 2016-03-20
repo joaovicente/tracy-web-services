@@ -99,16 +99,12 @@ public class RouteBuilder extends SpringRouteBuilder {
             .post("/applications/{application}/tasks/{task}/config").description("Set Task config").type(TaskConfig.class)
               .param().name("application").type(path).description("The application").dataType("string").endParam()
               .param().name("task").type(path).description("The task").dataType("string").endParam()
-                .to("direct:storeTaskConfig")
+                .to("bean:esQueryProcessor?method=setTaskConfig")
                 
             .get("/applications/{application}/tasks/{task}/config").description("Get Task config").outType(TaskConfig.class)
               .param().name("application").type(path).description("The application").dataType("string").endParam()
               .param().name("task").type(path).description("The task").dataType("string").endParam()
-                // TODO: Build TaskConfig search query
-                // TODO: Run query against ES
-                // TODO: Build REST response
-                //.to("direct:retrieveTaskConfigViaSearch")
-                .to("bean:esQueryProcessor?method=retrieveTaskConfigViaSearch")
+                .to("bean:esQueryProcessor?method=getTaskConfig")
             	
             // TODO: Merge into ...{task}/measurement
             .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)
@@ -129,51 +125,6 @@ public class RouteBuilder extends SpringRouteBuilder {
         
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
                .to("direct:toogleTracySimulation");
-
-        from("direct:retrieveTaskConfigViaGetById").routeId("retrieveTaskConfigViaGetById")
-          // FIXME: Use GET_BY_ID instead of SEARCH
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_ID, simple("${header.application}__${header.task}"))
-		  .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, constant("entities"))
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, constant("TaskConfig"))
-		  .to("elasticsearch://local?operation=GET_BY_ID")
-          .log("${body}")
-		  .to("bean:esQueryProcessor?method=prepareRetrievedTaskConfig");
-         // TODO: Try search instead
-        from("direct:retrieveTaskConfigViaSearch").routeId("retrieveTaskConfigViaSearch")
-		  .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, constant("entities"))
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, constant("TaskConfig"))
-          .process(new Processor()	{
-        	  @Override
-        	  public void process(Exchange exchange) throws Exception {
-        		  String filter = "application:\"demo\" AND task:\"hello-tracy-sim\"";
-        		  BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-        				  .must(QueryBuilders.queryStringQuery(filter));
-        		  XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
-        		  queryBuilder.toXContent(contentBuilder, null);
-        		  contentBuilder.endObject();
-        		  System.out.println( contentBuilder.string());
-        		  exchange.getIn().setBody(contentBuilder);
-        	  }
-          })
-		  .to("elasticsearch://local?operation=SEARCH")
-          .process(new Processor()	{
-        	  @Override
-        	  public void process(Exchange exchange) throws Exception {
-        		  SearchResponse response = exchange.getIn().getBody(SearchResponse.class);
-        		  String responseString = response.getHits().getAt(0).getSourceAsString();
-        		  System.out.println("=== " +responseString);
-        		  ObjectMapper mapper = new ObjectMapper();
-        		  TaskConfig taskConfig = mapper.readValue(responseString, TaskConfig.class);        		  
-				  exchange.getIn().setBody(taskConfig);
-        	  }
-          });
-          
-        from("direct:storeTaskConfig").routeId("storeTaskConfig")
-          .to("bean:esQueryProcessor?method=prepareToStoreTaskConfig")
-          .log("${body}")
-          .log("${headers}")
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_ID, simple("${header.application}__${header.task}"))
-		  .to("elasticsearch://local?operation=INDEX");
         
         from("direct:toogleTracySimulation").routeId("toogleTracySimulation")
           .setBody(simple(""))

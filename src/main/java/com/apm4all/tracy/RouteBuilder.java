@@ -110,7 +110,7 @@ public class RouteBuilder extends SpringRouteBuilder {
             .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
               .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
-            	.to("direct:search")
+            	.to("direct:taskMeasurment")
             	
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
@@ -253,7 +253,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 //          .log("${headers}")
 		  .to("elasticsearch://local?operation=INDEX");
         
-        from("direct:search").routeId("search")
+        from("direct:taskMeasurment").routeId("taskMeasurment")
           .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
           .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
           // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          

@@ -215,10 +215,11 @@ public class EsQueryProcessor {
 			@Header(TIME_FRAME) TimeFrame timeFrame,
 			@Header(TASK_MEASUREMENT) TaskMeasurement taskMeasurement,
 			@Body SearchResponse searchResponse) {
-		
+	
+		// FIXME: Handle case where no data was found (currently causing java.lang.NullPointerException)
 		DateHistogram agg = searchResponse.getAggregations().get("timeBuckets");
 
-		// TODO: Iterate through each time bucket
+		// Iterate through each time bucket
 		List<Long> apdexTimeSequence = new ArrayList<Long>();
 		List<Long> vitalsTimeSequence = new ArrayList<Long>();
 		List<Integer> vitalsCount = new ArrayList<Integer>();

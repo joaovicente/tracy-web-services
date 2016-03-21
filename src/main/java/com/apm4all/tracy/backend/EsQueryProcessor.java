@@ -9,14 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.camel.Body;
-import org.apache.camel.CamelContext;
+import org.apache.camel.CamelExecutionException;
 import org.apache.camel.Exchange;
 import org.apache.camel.Header;
 import org.apache.camel.Headers;
-import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.component.elasticsearch.ElasticsearchConstants;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -29,9 +27,9 @@ import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters.Bucket;
 import org.elasticsearch.search.aggregations.bucket.filters.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
-import org.elasticsearch.search.aggregations.metrics.stats.Stats;
 import org.elasticsearch.search.aggregations.metrics.percentiles.Percentile;
 import org.elasticsearch.search.aggregations.metrics.percentiles.Percentiles;
+import org.elasticsearch.search.aggregations.metrics.stats.Stats;
 
 import com.apm4all.tracy.apimodel.LatencyHistogram;
 import com.apm4all.tracy.apimodel.SingleApdexTimechart;
@@ -59,45 +57,13 @@ public class EsQueryProcessor {
 		this.template = template;
 	}
 
-	public void initMeasurement(@Headers Map<String, Object> headers,
-			@Header(APPLICATION) String application,
-			@Header(TASK) String task,
-			@Header(TASK_CONFIG) TaskConfig taskConfig,
-			@Header(EARLIEST) String earliest,
-			@Header(LATEST) String latest,
-			@Header(SNAP) String snap) {
-		// FIXME: A valid config must be supplied at this point 
-		if (taskConfig == null)	{
-			taskConfig = new TaskConfig(application, task);
-			headers.put(TASK_CONFIG, taskConfig);
-		}
-		// Get earliest, latest and snap if provided
-		headers.put(TIME_FRAME, new TimeFrame(earliest, latest, snap, taskConfig));
-		
-		// Setup RetrievedTaskMeasurement
-		TaskMeasurement taskMeasurement = new RetrievedTaskMeasurement(taskConfig.getApplication(), taskConfig.getTask());
-		headers.put(TASK_MEASUREMENT, taskMeasurement);
-	
-		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
-		singleApdexTimechart.setApplication(application);
-		singleApdexTimechart.setTask(task);
-		singleApdexTimechart.setRttF(taskConfig.getMeasurement().getRttFrustrated());
-		singleApdexTimechart.setRttT(taskConfig.getMeasurement().getRttTolerating());
-		singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
-	}
-	
 	public TaskConfig buildTaskConfigDto(@Header(APPLICATION) String application, @Header(TASK) String task)	{
-		System.out.println("*** buildTaskConfigDto ***");
+//		System.out.println("*** buildTaskConfigDto ***");
 		return new TaskConfig(application, task);
 	}
 	
-	
-	
-	public void getTaskConfig(
-			Exchange exchange,
-			@Header(APPLICATION) String application, 
-			@Header(TASK) String task
-				) throws IOException	{
+	// TODO: Throw custom exceptions: ESQueryBuildingException ESResponseMarshallingException 
+	public TaskConfig getTaskConfigFromEs(String application, String task) throws IOException {
 		Map<String, Object> headers = new HashMap<String, Object>();
 		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
 		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
@@ -116,13 +82,28 @@ public class EsQueryProcessor {
 //        System.out.println("=== " +responseString);
         	ObjectMapper mapper = new ObjectMapper();
         	taskConfig = mapper.readValue(responseString, TaskConfig.class);
-        	exchange.getIn().setBody(taskConfig);
         }
         else	{
-        	// TODO: Add standardized error response and set httpStatus 
-        	taskConfig = new TaskConfig(application, task);
-        	exchange.getIn().setBody("not found");
+        	taskConfig = null;
         }
+        return taskConfig;
+	}
+	
+	public void getTaskConfig(
+			Exchange exchange,
+			@Header(APPLICATION) String application, 
+			@Header(TASK) String task
+				) throws IOException	{
+		TaskConfig taskConfig = getTaskConfigFromEs(application, task);
+		if (taskConfig != null)	{
+			// TODO: Better to use an exception here
+			exchange.getIn().setBody(taskConfig);
+		}
+		else	{
+        	// TODO: Add standardized error response and set httpStatus 
+			exchange.getIn().setBody("not found");
+		}
+		
 	}
 	
 	public void setTaskConfig(
@@ -141,13 +122,99 @@ public class EsQueryProcessor {
 		headers.put(ElasticsearchConstants.PARAM_INDEX_ID, "TaskConfig");
         template.requestBodyAndHeaders("elasticsearch://local?operation=INDEX", taskConfigAsJson, headers);
 	}
+
+	private void populateTaskMeasurementFromTaskConfig(
+			String application, 
+			String task, 
+			TaskConfig taskConfig, 
+			TaskMeasurement taskMeasurement)	{
+		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
+		singleApdexTimechart.setApplication(application);
+		singleApdexTimechart.setTask(task);
+		singleApdexTimechart.setRttF(taskConfig.getMeasurement().getRttFrustrated());
+		singleApdexTimechart.setRttT(taskConfig.getMeasurement().getRttTolerating());
+		singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
+	}
 	
+	public void getTaskMeasurement(
+			Exchange exchange,
+			@Header(APPLICATION) String application,
+			@Header(TASK) String task,
+			@Header(EARLIEST) String earliest,
+			@Header(LATEST) String latest,
+			@Header(SNAP) String snap,
+			@Headers Map<String, Object> headers) throws IOException {
 	
-	public XContentBuilder buildOverviewSearchRequest(
-			@Header(TASK_CONFIG) TaskConfig taskConfig, 
-			@Header(TIME_FRAME) TimeFrame timeFrame) throws IOException	{
-		// "bool" Restrict results by time range and match criteria
+		final String MEASUREMENT_STAGE_COMPLETED = "measurementStageCompleted";
 		
+		headers.put(MEASUREMENT_STAGE_COMPLETED, "started");
+		try {
+			// Get taskConfig for application,task 
+			TaskConfig taskConfig = getTaskConfigFromEs(application, task);
+			headers.put(MEASUREMENT_STAGE_COMPLETED, "gotTaskConfig");
+			// Get earliest, latest and snap if provided
+			TimeFrame timeFrame = new TimeFrame(earliest, latest, snap, taskConfig);
+			headers.put(EARLIEST, timeFrame.getEarliest());
+			headers.put(LATEST, timeFrame.getLatest());
+			headers.put(SNAP, timeFrame.getSnap());
+		
+			TaskMeasurement taskMeasurement;
+			taskMeasurement = new RetrievedTaskMeasurement(application, task);
+			populateTaskMeasurementFromTaskConfig(application, task, taskConfig, taskMeasurement);
+
+			// TODO: Refine index to tracy-<component>, but component will need to be captured in taskConfig somehow
+			headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "tracy*"); 
+			headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "tracy");
+			
+			// Overview query: populates APDEX scores and vitals counts
+			XContentBuilder contentBuilder = buildOverviewSearchRequest(taskConfig, timeFrame);
+			headers.put("esOverviewSearchRequest", contentBuilder.string());
+			// make Overview Search Request
+			SearchResponse searchResponse = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
+//			headers.put("esOverviewSearchResponse", searchResponse.toString());
+			handleOverviewSearchResponse(timeFrame, taskMeasurement, searchResponse);
+			headers.put(MEASUREMENT_STAGE_COMPLETED, "gotTaskConfig");
+			headers.put(MEASUREMENT_STAGE_COMPLETED, "overviewSearchCompleted");
+			
+			// Success Stats query: populates vitals stats max,percentiles and latencyHistogram 
+			contentBuilder = buildSuccessStatsSearchRequest(taskConfig, timeFrame);
+			headers.put("esSuccessStatsSearchRequest", contentBuilder.string());
+			// make Success Stats Search Request
+			searchResponse = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
+//			headers.put("esSuccessStatsSearchResponse", searchResponse.toString());
+			handleSucessStatsSearchResponse(taskConfig, timeFrame, taskMeasurement, searchResponse);
+			headers.put(MEASUREMENT_STAGE_COMPLETED, "successStatsSearchCompleted");
+			
+			exchange.getIn().setBody(taskMeasurement);
+			headers.put(MEASUREMENT_STAGE_COMPLETED, "all");
+		} catch (CamelExecutionException e) {
+			// TODO: Improve error/exception handling and set http status
+			exchange.getIn().setBody("Failed to retrieved taskMeasurement");
+		}
+	}
+	
+	private Double calculateApdexScore(long invocations, long satisfied, long tolerating) {
+		Double apdexScore;
+		if(invocations == 0) {
+			  throw new ArithmeticException("Division by zero!");
+		}
+		apdexScore = (double) (((double)satisfied + ((double)tolerating/2)) / (double)invocations);
+//					System.out.println("apdex: " + apdexScore 
+//							+ ", invocations " + invocations
+//							+ ", satisfied " + satisfied
+//							+ ", tolerating " + tolerating);
+		return round(apdexScore, 2);
+	}
+	
+	private Double round(double number, int digits)	{
+		BigDecimal bd = new BigDecimal(number);
+		bd = bd.setScale(digits, RoundingMode.HALF_UP);
+		return bd.doubleValue();
+	}
+
+	public XContentBuilder buildOverviewSearchRequest(
+			TaskConfig taskConfig, 
+			TimeFrame timeFrame) throws IOException	{
 		long earliest = timeFrame.getEarliest();
 		long latest = timeFrame.getLatest();
 		int rttTolerating = taskConfig.getMeasurement().getRttTolerating();
@@ -191,30 +258,10 @@ public class EsQueryProcessor {
 		return contentBuilder;
 	}
 
-	private Double round(double number, int digits)	{
-		BigDecimal bd = new BigDecimal(number);
-		bd = bd.setScale(digits, RoundingMode.HALF_UP);
-		return bd.doubleValue();
-	}
-	
-	private Double calculateApdexScore(long invocations, long satisfied, long tolerating) {
-		Double apdexScore;
-		if(invocations == 0) {
-			  throw new ArithmeticException("Division by zero!");
-		}
-		apdexScore = (double) (((double)satisfied + ((double)tolerating/2)) / (double)invocations);
-					System.out.println("apdex: " + apdexScore 
-							+ ", invocations " + invocations
-							+ ", satisfied " + satisfied
-							+ ", tolerating " + tolerating);
-		return round(apdexScore, 2);
-	}
-
 	public TaskMeasurement handleOverviewSearchResponse(
-			@Header(TASK_CONFIG) TaskConfig taskConfig, 
-			@Header(TIME_FRAME) TimeFrame timeFrame,
-			@Header(TASK_MEASUREMENT) TaskMeasurement taskMeasurement,
-			@Body SearchResponse searchResponse) {
+			TimeFrame timeFrame,
+			TaskMeasurement taskMeasurement,
+			SearchResponse searchResponse) {
 	
 		// FIXME: Handle case where no data was found (currently causing java.lang.NullPointerException)
 		DateHistogram agg = searchResponse.getAggregations().get("timeBuckets");
@@ -241,11 +288,11 @@ public class EsQueryProcessor {
 					Double apdexScore = calculateApdexScore(invocations, satisfied, tolerating);
 					apdexTimeSequence.add(time);
 					apdexScores.add(apdexScore);
-					System.out.println("+++ TIME: " + time 
-							+ ", apdex: " + apdexScore 
-							+ ", invocations " + invocations
-							+ ", satisfied " + satisfied
-							+ ", tolerating " + tolerating);
+//					System.out.println("+++ TIME: " + time 
+//							+ ", apdex: " + apdexScore 
+//							+ ", invocations " + invocations
+//							+ ", satisfied " + satisfied
+//							+ ", tolerating " + tolerating);
 				}
 				catch (ArithmeticException e) {
 				}
@@ -253,23 +300,23 @@ public class EsQueryProcessor {
 			else	{
 				// When handling response need to fill-in for empty (not returned) buckets
 				// min_doc_count does not seem to work with DateHistogram.
-				System.out.println("--- TIME: " + time);
+//				System.out.println("--- TIME: " + time);
 			}
 			vitalsTimeSequence.add(time);
 			vitalsErrors.add((int) errors);
 			vitalsCount.add((int) invocations);
 		}
 		
-		for (DateHistogram.Bucket entry : agg.getBuckets()) {
-			String key = entry.getKey();                // Key
-			Number nkey = entry.getKeyAsNumber();
-			Filters f = entry.getAggregations().get("counters");
-			for (Filters.Bucket bucket : f.getBuckets())	{
-				System.out.println( "key [" + key + "], " 
-						+ "epoch [" + nkey.longValue() + "], "
-						+ bucket.getKey() + " [" + bucket.getDocCount() + "]");
-			}
-		}
+//		for (DateHistogram.Bucket entry : agg.getBuckets()) {
+//			String key = entry.getKey();                // Key
+//			Number nkey = entry.getKeyAsNumber();
+//			Filters f = entry.getAggregations().get("counters");
+//			for (Filters.Bucket bucket : f.getBuckets())	{
+//				System.out.println( "key [" + key + "], " 
+//						+ "epoch [" + nkey.longValue() + "], "
+//						+ bucket.getKey() + " [" + bucket.getDocCount() + "]");
+//			}
+//		}
 		// Populate SingleApdexTimechart: timeSequence, apdexScores
 		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
 		singleApdexTimechart.setTimeSequence(apdexTimeSequence);
@@ -301,9 +348,8 @@ public class EsQueryProcessor {
 	}
 	
 	public XContentBuilder buildSuccessStatsSearchRequest(
-			@Header(TASK_CONFIG) TaskConfig taskConfig, 
-			@Header(TIME_FRAME) TimeFrame timeFrame) throws IOException	{
-		// "bool" Restrict results by time range and match criteria
+			TaskConfig taskConfig,
+			TimeFrame timeFrame) throws IOException	{
 		
 		long earliest = timeFrame.getEarliest();
 		long latest = timeFrame.getLatest();
@@ -346,12 +392,11 @@ public class EsQueryProcessor {
 		return contentBuilder;
 	}
 
-
 	public TaskMeasurement handleSucessStatsSearchResponse(
-			@Header(TASK_CONFIG) TaskConfig taskConfig, 
-			@Header(TIME_FRAME) TimeFrame timeFrame,
-			@Header(TASK_MEASUREMENT) TaskMeasurement taskMeasurement,
-			@Body SearchResponse searchResponse) {
+			TaskConfig taskConfig, 
+			TimeFrame timeFrame,
+			TaskMeasurement taskMeasurement,
+			SearchResponse searchResponse) {
 		// Vitals data
 		ArrayList<Double> p95 = new ArrayList<Double>();
 		ArrayList<Double> max = new ArrayList<Double>();
@@ -377,7 +422,7 @@ public class EsQueryProcessor {
 				Bucket satisfiedBucket = counters.getBucketByKey("success");
 				Stats stats = satisfiedBucket.getAggregations().get("stats");
                 // Populate Max
-				System.out.println("Max [" + stats.getMax() + "]");
+//				System.out.println("Max [" + stats.getMax() + "]");
 				max.add(round(stats.getMax(),0));
 				
 				Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
@@ -387,7 +432,7 @@ public class EsQueryProcessor {
 				    if (percent == 95.0)	{
                         // Populate p95
 				    	double value = entry.getValue();        // Value
-				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
+//				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
 				    	p95.add(round(value,0));
 				    }
 				}
@@ -401,8 +446,8 @@ public class EsQueryProcessor {
 					binCount = (int) (Integer.valueOf(binCount) + latencyHistogram.getBucketByKey(row.getLabel()).getDocCount());
 					count.set(i, binCount);
 					i++;
-					System.out.println("latencyHistogram [" + row.getLabel() // 0-100
-							+ "], value [" +  latencyHistogram.getBucketByKey(row.getLabel()).getDocCount() + "]");
+//					System.out.println("latencyHistogram [" + row.getLabel() // 0-100
+//							+ "], value [" +  latencyHistogram.getBucketByKey(row.getLabel()).getDocCount() + "]");
 				}
 			}
 			else	{
@@ -422,4 +467,5 @@ public class EsQueryProcessor {
 		latencyHistogram.setRttZone(rttZone);
 		return taskMeasurement;
 	}
+
 }

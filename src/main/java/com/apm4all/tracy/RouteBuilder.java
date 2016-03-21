@@ -28,11 +28,6 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -90,7 +85,7 @@ public class RouteBuilder extends SpringRouteBuilder {
             .get("/applications/{application}/tasks/{task}/measurement").description("Get measurement for a Task").outType(TaskMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
               .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
-            	.to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
+            	.to("direct:taskMeasurement")
             
             .get("/applications/{application}/measurement").description("Get measurement for an Application").outType(ApplicationMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
@@ -105,12 +100,6 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("application").type(path).description("The application").dataType("string").endParam()
               .param().name("task").type(path).description("The task").dataType("string").endParam()
                 .to("bean:esQueryProcessor?method=getTaskConfig")
-            	
-            // TODO: Merge into ...{task}/measurement
-            .get("/applications/{application}/tasks/{task}/search").description("Test ES Search").outType(TaskMeasurement.class)
-              .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
-              .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
-            	.to("direct:taskMeasurment")
             	
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
@@ -253,36 +242,13 @@ public class RouteBuilder extends SpringRouteBuilder {
 //          .log("${headers}")
 		  .to("elasticsearch://local?operation=INDEX");
         
-        from("direct:taskMeasurment").routeId("taskMeasurment")
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
-          .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
-          // FIXME: Get non-embedded ElasticSearch configuration working (possibly not working in Camel 2.16)          
-//		  .to("elasticsearch://jv?operation=SEARCH&transportAddresses=dockerhost:9300&indexName=a&indexType=a")
-          .bean("esQueryProcessor", "initMeasurement")
-          // TODO: Ensure taskConfig header is available at this point
-          .bean("esQueryProcessor", "buildOverviewSearchRequest") // returns SearchRequest
+        from("direct:taskMeasurement").routeId("taskMeasurment")
           .choice()
-            .when(simple("${in.header.debug} == true"))
-            	.log("searchRequest: ${body.string()}")
-            	.end()
-		  .to("elasticsearch://local?operation=SEARCH")
-          .choice()
-            .when(simple("${in.header.debug} == true"))
-            	.log("searchResponse: ${body}")
-            	.end()
-          // handles searchResponse body and populates TASK_MEASUREMENT header
-          .bean("esQueryProcessor", "handleOverviewSearchResponse")
-          .bean("esQueryProcessor", "buildSuccessStatsSearchRequest") // returns SearchRequest
-          .choice()
-            .when(simple("${in.header.debug} == true"))
-            	.log("searchRequest: ${body.string()}")
-            	.end()
-		  .to("elasticsearch://local?operation=SEARCH")
-          .choice()
-            .when(simple("${in.header.debug} == true"))
-            	.log("searchResponse: ${body}")
-            	.end()
-          .bean("esQueryProcessor", "handleSucessStatsSearchResponse"); // returns SearchRequest
+            .when(simple("${in.header.application} contains 'demo'"))
+              .bean("esQueryProcessor", "getTaskMeasurement")
+            .when(simple("${in.header.application} contains 'SimulatedApp'"))
+              .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
+            .end();
         
           // Process SearchResponse
 //          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");

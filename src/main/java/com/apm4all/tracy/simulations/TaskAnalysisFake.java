@@ -106,6 +106,7 @@ public class TaskAnalysisFake implements TaskAnalysis {
 	    }
 	    
 	    String host = "ukdb807735-3.local";
+	    // Progressive frame creation
 	    for (int i=0 ; i<sequenceNumber ; i++)	{
 	    	tracyTaskEvents.add(
 	    			createTracyEvent(
@@ -119,20 +120,6 @@ public class TaskAnalysisFake implements TaskAnalysis {
 	    					host, 
 	    					"layer" + Integer.toString(i)));
 	    }
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "n", "A014", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "n"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "m", "A013", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "m"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "l", "A012", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "l"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "k", "A011", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "k"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "j", "A010", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "j"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "i", "A009", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "i"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "h", "A008", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "h"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "g", "A007", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "g"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "f", "A006", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "f"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "e", "A005", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "e"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "d", "A004", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "d"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "c", "A003", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "c"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "b", "A002", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "b"));
-//	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AD24", "a", "A001", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "a"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "foo", "AD24", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "23CF", "Http servlet", "4F3D", timeOffset+rt+offset*2, timeOffset+rt+offset*8, offset*6, host, "Service"));

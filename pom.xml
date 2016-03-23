@@ -168,6 +168,7 @@
 			</configuration>
 		</plugin>
 <!-- Step 1. - Download Swagger UI project from GitHub -->
+<!-- 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>wagon-maven-plugin</artifactId>
@@ -186,8 +187,9 @@
           </execution>
         </executions>
       </plugin>
-
+ -->
       <!-- Step 2. -  Decompress content and move it to target/swagger-ui folder -->
+<!-- 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -212,7 +214,7 @@
           </execution>
         </executions>
       </plugin>
-
+-->
       <!-- Step 3. Copy Web Resources to target/classes but also to target/swagger-ui -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -242,8 +244,8 @@
           </execution>
         </executions>
       </plugin>
-
       <!-- Step 4. Add Swagger-ui Resources to the WAR -->
+<!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -259,7 +261,7 @@
           </webResources>
         </configuration>
       </plugin>
-
+-->
       <!-- allows running this example with mvn:jetty-run -->
       <plugin>
         <groupId>org.eclipse.jetty</groupId>

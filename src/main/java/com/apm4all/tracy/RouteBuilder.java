@@ -29,6 +29,7 @@ import org.apache.camel.processor.interceptor.DefaultTraceFormatter;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spring.SpringRouteBuilder;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -223,7 +224,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 				public void process(Exchange exchange) throws Exception {
 			        ObjectMapper m = new ObjectMapper();
 			        JsonNode rootNode = m.readTree((String)exchange.getIn().getBody());
-					DateTime dt = new DateTime(rootNode.path("msecBefore").asLong());
+					DateTime dt = new DateTime(rootNode.path("msecBefore").asLong(), DateTimeZone.UTC);
 					String esTimestamp = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
 					((ObjectNode) rootNode).put("@timestamp", esTimestamp);
 					StringBuilder index = new StringBuilder();

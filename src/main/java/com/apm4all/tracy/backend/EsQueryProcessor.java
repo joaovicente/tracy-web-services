@@ -229,7 +229,7 @@ public class EsQueryProcessor {
 		AggregationBuilder aggregationBuilder = AggregationBuilders
 			.dateHistogram("timeBuckets")
 		    .field("@timestamp")
-		    .interval(DateHistogram.Interval.MINUTE)
+		    .interval(DateHistogram.Interval.seconds(taskConfig.getMeasurement().getSnap()/1000))
 		    // min_doc_count does not seem to work with DateHistogram.
 		    .minDocCount(0) 
 		    .subAggregation(
@@ -363,7 +363,7 @@ public class EsQueryProcessor {
 		AggregationBuilder aggregationBuilder = AggregationBuilders
 			.dateHistogram("timeBuckets")
 		    .field("@timestamp")
-		    .interval(DateHistogram.Interval.MINUTE)
+		    .interval(DateHistogram.Interval.seconds(taskConfig.getMeasurement().getSnap()/1000))
 		    // min_doc_count does not seem to work with DateHistogram.
 		    .minDocCount(0) 
 		    .subAggregation(

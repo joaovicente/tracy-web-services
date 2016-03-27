@@ -30,7 +30,10 @@ public class TaskConfig {
 		}
 		public void setSpan(int span) {
 			this.span = span;
-		}
+		}		
+		// FIXME: Consumers currently assume response is returned in ms. Need to:
+		// 1) Support setting config in other units (non ms)
+		// 2) Review getSnap clients and update them to getSnapInSecs() if they require sec units  (e.g. date histogram)
 		public int getSnap() {
 			return snap;
 		}

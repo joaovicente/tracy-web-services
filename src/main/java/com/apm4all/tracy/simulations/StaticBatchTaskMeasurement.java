@@ -266,8 +266,6 @@ public class StaticBatchTaskMeasurement implements TaskMeasurement {
     			
     }
 
-
-
 	@Override
 	public SingleApdexTimechart getSingleApdexTimechart() {
 		return singleApdexTimechart;

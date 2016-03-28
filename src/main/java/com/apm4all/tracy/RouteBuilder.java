@@ -245,9 +245,9 @@ public class RouteBuilder extends SpringRouteBuilder {
         
         from("direct:taskMeasurement").routeId("taskMeasurment")
           .choice()
-            .when(simple("${in.header.application} contains 'demo'"))
+            .when(simple("${in.header.application} contains 'demo-live'"))
               .bean("esQueryProcessor", "getTaskMeasurement")
-            .when(simple("${in.header.application} contains 'Simulated'"))
+            .when(simple("${in.header.application} contains 'demo-static'"))
               .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
             .end();
         

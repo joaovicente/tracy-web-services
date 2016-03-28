@@ -16,10 +16,10 @@ public class TaskMeasurementService {
      */
     public TaskMeasurement getTaskMeasurement(String application, String task) {
     	TaskMeasurement taskMeasurement = null;
-    	if (application.equals("SimulatedApp"))	{
+    	if (application.equals("demo-static-app"))	{
     		taskMeasurement = new StaticTaskMeasurement(application, task);
     	}
-    	else if (application.equals("SimulatedBatchApp"))	{
+    	else if (application.equals("demo-static-batch-app"))	{
     		taskMeasurement = new StaticBatchTaskMeasurement(application, task);
     	}
     	return taskMeasurement;

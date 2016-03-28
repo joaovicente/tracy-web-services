@@ -96,7 +96,7 @@ public class TaskAnalysisFake implements TaskAnalysis {
 	    // long offset = 61010; // minOffset
 	    long offset = 3601000L; // hourOffset
 	    
-	    if (this.task.contains("Static"))	{
+	    if (this.application.contains("demo-static"))	{
 	    	// msec unit
 	    	offset = (ll/10L);
 	    }
@@ -105,7 +105,7 @@ public class TaskAnalysisFake implements TaskAnalysis {
 	    	offset = ll*3601000L/10L;
 	    }
 	    
-	    String host = "ukdb807735-3.local";
+	    String host = "46.7.188.254";
 	    // Progressive frame creation
 	    for (int i=0 ; i<sequenceNumber ; i++)	{
 	    	tracyTaskEvents.add(

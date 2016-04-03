@@ -43,21 +43,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EsQueryProcessor {
-	public static final String APPLICATION = "application";
-	public static final String TASK = "task";
-	public static final String TASK_CONFIG = "taskConfig";
-	public static final String TIME_FRAME = "timeFrame";
-	public static final String EARLIEST = "earliest";
-	public static final String LATEST = "latest";
-	public static final String SNAP = "snap";
-	public static final String TASK_MEASUREMENT = "taskMeasurement";
-	private ProducerTemplate template;
+    private ProducerTemplate template;
 
 	public void setTemplate(ProducerTemplate template) {
 		this.template = template;
 	}
 
-	public TaskConfig buildTaskConfigDto(@Header(APPLICATION) String application, @Header(TASK) String task)	{
+	public TaskConfig buildTaskConfigDto(@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application, @Header(com.apm4all.tracy.apimodel.Headers.TASK) String task)	{
 //		System.out.println("*** buildTaskConfigDto ***");
 		return new TaskConfig(application, task);
 	}
@@ -91,8 +83,8 @@ public class EsQueryProcessor {
 	
 	public void getTaskConfig(
 			Exchange exchange,
-			@Header(APPLICATION) String application, 
-			@Header(TASK) String task
+			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
+			@Header(com.apm4all.tracy.apimodel.Headers.TASK) String task
 				) throws IOException	{
 		TaskConfig taskConfig = getTaskConfigFromEs(application, task);
 		if (taskConfig != null)	{
@@ -109,8 +101,8 @@ public class EsQueryProcessor {
 	public void setTaskConfig(
 			Exchange exchange,
 			@Body TaskConfig taskConfig,
-			@Header(APPLICATION) String application, 
-			@Header(TASK) String task,
+			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
+			@Header(com.apm4all.tracy.apimodel.Headers.TASK) String task,
 			@Headers Map<String, Object> headers)
 					throws JsonProcessingException	{
 //		System.out.println("*** setTaskConfig ***");
@@ -138,11 +130,11 @@ public class EsQueryProcessor {
 	
 	public void getTaskMeasurement(
 			Exchange exchange,
-			@Header(APPLICATION) String application,
-			@Header(TASK) String task,
-			@Header(EARLIEST) String earliest,
-			@Header(LATEST) String latest,
-			@Header(SNAP) String snap,
+			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
+			@Header(com.apm4all.tracy.apimodel.Headers.TASK) String task,
+			@Header(com.apm4all.tracy.apimodel.Headers.EARLIEST) String earliest,
+			@Header(com.apm4all.tracy.apimodel.Headers.LATEST) String latest,
+			@Header(com.apm4all.tracy.apimodel.Headers.SNAP) String snap,
 			@Headers Map<String, Object> headers) throws IOException {
 	
 		final String MEASUREMENT_STAGE_COMPLETED = "measurementStageCompleted";
@@ -154,9 +146,9 @@ public class EsQueryProcessor {
 			headers.put(MEASUREMENT_STAGE_COMPLETED, "gotTaskConfig");
 			// Get earliest, latest and snap if provided
 			TimeFrame timeFrame = new TimeFrame(earliest, latest, snap, taskConfig);
-			headers.put(EARLIEST, timeFrame.getEarliest());
-			headers.put(LATEST, timeFrame.getLatest());
-			headers.put(SNAP, timeFrame.getSnap());
+			headers.put(com.apm4all.tracy.apimodel.Headers.EARLIEST, timeFrame.getEarliest());
+			headers.put(com.apm4all.tracy.apimodel.Headers.LATEST, timeFrame.getLatest());
+			headers.put(com.apm4all.tracy.apimodel.Headers.SNAP, timeFrame.getSnap());
 		
 			TaskMeasurement taskMeasurement;
 			taskMeasurement = new RetrievedTaskMeasurement(application, task);
@@ -467,5 +459,6 @@ public class EsQueryProcessor {
 		latencyHistogram.setRttZone(rttZone);
 		return taskMeasurement;
 	}
+
 
 }

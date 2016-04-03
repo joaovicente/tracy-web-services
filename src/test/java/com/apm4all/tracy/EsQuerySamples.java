@@ -184,6 +184,4 @@ public class EsQuerySamples {
 //        SearchResponse response = null;
 //        response.getHits().getAt(0).getSourceAsString();
 	}	
-	
-	
 }

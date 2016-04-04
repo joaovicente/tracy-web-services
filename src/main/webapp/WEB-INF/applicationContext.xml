@@ -14,33 +14,27 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:camel="http://camel.apache.org/schema/spring"
+    xmlns="http://www.springframework.org/schema/beans"
 
     xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
 
-  <bean class="com.apm4all.tracy.RouteBuilder" id="routeBuilder" />
-
-	<!-- a bean for taskMeasurement services -->
+    <bean class="com.apm4all.tracy.RouteBuilder" id="routeBuilder" />
 	<bean id="taskMeasurementService" class="com.apm4all.tracy.services.TaskMeasurementService" />
-
-	<!-- a bean for applicationMeasurement services -->
 	<bean id="applicationMeasurementService" class="com.apm4all.tracy.services.ApplicationMeasurementService" />
-	
-	<!-- a bean for taskMeasurement services -->
 	<bean id="applicationsService" class="com.apm4all.tracy.services.ApplicationsService" />
-	
-	<!-- a bean for taskAnalysis services -->
 	<bean id="taskAnalysisService" class="com.apm4all.tracy.services.TaskAnalysisService" />
-	
-	<!-- a bean for esQueryProcessor -->
-	<bean id="esQueryProcessor" class="com.apm4all.tracy.backend.EsQueryProcessor">
+	<bean id="esTaskConfig" class="com.apm4all.tracy.backend.EsTaskConfig">
 	  <property name="template" ref="producerTemplate"/>
 	</bean>
-	
+    <bean id="esTaskMeasurement" class="com.apm4all.tracy.backend.EsTaskMeasurement">
+        <property name="template" ref="producerTemplate"/>
+        <property name="esTaskConfig" ref="esTaskConfig"/>
+    </bean>
+
   <!-- Camel Context -->     
   <camelContext xmlns="http://camel.apache.org/schema/spring">
     <template id="producerTemplate"/>

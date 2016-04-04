@@ -44,17 +44,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class RouteBuilder extends SpringRouteBuilder {
 
-	private boolean tracySimulationEnabled = false; 
+	private boolean tracySimulationEnabled = false;
 	private boolean flushTracy = true; // Flush tracy at start-up
 	static final String TRACY_SIMULATION_ENABLED = "TRACY_SIMULATION_ENABLED";
 	static final String FLUSH_TRACY = "FLUSH_TRACY";
-	
+
 	@Override
 	public void configure() throws Exception {
 		Tracer tracer = new Tracer();
 		tracer.setTraceOutExchanges(true);
 		tracer.setEnabled(false);
-		 
+
 		// we configure the default trace formatter where we can
 		// specify which fields we want in the output
 		DefaultTraceFormatter formatter = new DefaultTraceFormatter();
@@ -62,10 +62,10 @@ public class RouteBuilder extends SpringRouteBuilder {
 //		formatter.setShowOutBodyType(true);
 		formatter.setShowBody(true);
 		formatter.setShowBodyType(true);
-		 
+
 		// set to use our formatter
 		tracer.setFormatter(formatter);
-		 
+
 		getContext().addInterceptStrategy(tracer);
 
         // configure we want to use servlet as the component for the rest DSL
@@ -87,21 +87,21 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
               .param().name("task").type(path).description("The task to measure").dataType("string").endParam()
             	.to("direct:taskMeasurement")
-            
+
             .get("/applications/{application}/measurement").description("Get measurement for an Application").outType(ApplicationMeasurement.class)
               .param().name("application").type(path).description("The application to measure").dataType("string").endParam()
-            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")            	
+            	.to("bean:applicationMeasurementService?method=getApplicationMeasurement(${header.application})")
 
             .post("/applications/{application}/tasks/{task}/config").description("Set Task config").type(TaskConfig.class)
               .param().name("application").type(path).description("The application").dataType("string").endParam()
               .param().name("task").type(path).description("The task").dataType("string").endParam()
-                .to("bean:esQueryProcessor?method=setTaskConfig")
-                
+                .to("bean:esTaskConfig?method=setTaskConfig")
+
             .get("/applications/{application}/tasks/{task}/config").description("Get Task config").outType(TaskConfig.class)
               .param().name("application").type(path).description("The application").dataType("string").endParam()
               .param().name("task").type(path).description("The task").dataType("string").endParam()
-                .to("bean:esQueryProcessor?method=getTaskConfig")
-            	
+                .to("bean:esTaskConfig?method=getTaskConfig")
+
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
               .param().name("task").type(path).description("The task to analyse").dataType("string").endParam()
@@ -112,10 +112,10 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
             	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})")
-        
+
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
                .to("direct:toogleTracySimulation");
-        
+
         from("direct:toogleTracySimulation").routeId("toogleTracySimulation")
           .setBody(simple(""))
           .process(new Processor()	{
@@ -150,7 +150,7 @@ public class RouteBuilder extends SpringRouteBuilder {
             .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
               .to("seda:generateTracy")
               .to("seda:flushOldTracy");
-        
+
         from("seda:generateTracy").routeId("generateTracy")
           .setBody(simple(""))
           .process(new Processor()	{
@@ -169,7 +169,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 			    	else if ( random  > 84 ) { status = 401; }//   3%  401: Unauthorized
 			    	else if ( random  > 82 ) { status = 400; }//   2%  404: Bad request
 			    	else if ( random  > 81 ) { status = 307; }//   2%  429: Too many requests
-			    	else if ( random  > 80 ) { status = 500; }//   1%  500: Internal server error	
+			    	else if ( random  > 80 ) { status = 500; }//   1%  500: Internal server error
 		    		Tracy.setContext(null, null, COMPONENT);
 		    		Tracy.before(OUTER);
 		    		Tracy.annotate("status", status);
@@ -185,7 +185,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 				}
 			})
 			.to("seda:ingestTracy");
-        
+
         from("seda:flushOldTracy").routeId("flushOldTracy")
           //TODO: Prepare older than 60 minutes Tracy events
           .process(new Processor()	{
@@ -209,12 +209,12 @@ public class RouteBuilder extends SpringRouteBuilder {
 			  .when(simple("${in.header.FLUSH_TRACY} == true"))
                 .log("flushing old tracy")
 			    .to("http4://localhost:9200/tracy-hello-tracy-*/tracy")
-                  //TODO: Investigate why Camel ES Delete is not working 
+                  //TODO: Investigate why Camel ES Delete is not working
 //			      .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
 //                 .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
 //                .to("elasticsearch://local?operation=DELETE");
 			    .endChoice();
-          
+
         from("seda:ingestTracy").routeId("ingestTracy")
           //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)
           .split(body())
@@ -238,19 +238,19 @@ public class RouteBuilder extends SpringRouteBuilder {
 					exchange.getIn().setHeader(ElasticsearchConstants.PARAM_INDEX_ID, indexId);
 					exchange.getIn().setBody(m.writer().writeValueAsString(rootNode));
 				}
-			})          
+			})
 //          .log("${body}")
 //          .log("${headers}")
 		  .to("elasticsearch://local?operation=INDEX");
-        
+
         from("direct:taskMeasurement").routeId("taskMeasurment")
           .choice()
             .when(simple("${in.header.application} contains 'demo-live'"))
-              .bean("esQueryProcessor", "getTaskMeasurement")
+              .bean("esTaskMeasurement", "getTaskMeasurement")
             .when(simple("${in.header.application} contains 'demo-static'"))
               .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
             .end();
-        
+
           // Process SearchResponse
 //          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
 //        GET _search
@@ -276,9 +276,9 @@ public class RouteBuilder extends SpringRouteBuilder {
 //              }
 //            }
 //        }
-        
-        
-        
+
+
+
 //		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
 			// Tracy publishing should never block the sender
 			// waitForTaskToComplete allows endpoint to respond
@@ -294,7 +294,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 //		            response.setStatus(Status.SUCCESS_ACCEPTED);
 //				}
 //			});
-		
+
 //		from("seda:tracySegmentProcessor")
 //			.unmarshal().json(JsonLibrary.Jackson)
 //			.transform().simple("${body[tracySegment]}")
@@ -302,8 +302,8 @@ public class RouteBuilder extends SpringRouteBuilder {
 			// TODO: Send invalid segments to audit log
 //			.split(body())
 //			.to("seda:storeTracy");
-	
-		
+
+
 		// TODO: POST tracy-2015.04.22/webapp1/AAAAAAAAAAAAAAAAAAA001-O001
 //		{
 //		    "taskId": "AAAAAAAAAAAAAAAAAAA001",

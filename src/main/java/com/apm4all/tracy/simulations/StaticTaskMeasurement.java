@@ -222,20 +222,18 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     	
     	// Latency histogram
     	latencyHistogram = new LatencyHistogram();
-    	latencyHistogram.setBins(Arrays.asList(new String[]
-    			{">720", 
-    			"675-719", "630-674", "585-629", "540-584", 
-    			"495-539", "450-494", "405-449", "360-404", 
-    			"315-359", "270-314", "225-269", "180-224", 
-    			"135-179", "90-134", "45-89", "0-44"}
-    	));
-    	latencyHistogram.setRttZone(Arrays.asList(new String[]
-    			{"Frustrated",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Satisfied","Satisfied","Satisfied","Satisfied"}
-    	));
+    	latencyHistogram.setBins(Arrays.asList(
+				">720",
+				"675-719", "630-674", "585-629", "540-584",
+				"495-539", "450-494", "405-449", "360-404",
+				"315-359", "270-314", "225-269", "180-224",
+				"135-179", "90-134", "45-89", "0-44"));
+    	latencyHistogram.setRttZone(Arrays.asList(
+				"Frustrated",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Satisfied","Satisfied","Satisfied","Satisfied"));
     	
     	latencyHistogram.setCount(produceLatencyHistogramCounts());
     }

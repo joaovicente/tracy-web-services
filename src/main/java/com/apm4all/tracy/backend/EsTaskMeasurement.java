@@ -39,95 +39,20 @@ import com.apm4all.tracy.apimodel.VitalsTimechart;
 import com.apm4all.tracy.util.LatencyHistogramRows;
 import com.apm4all.tracy.util.LatencyHistogramRows.LatencyHistogramRow;
 import com.apm4all.tracy.util.TimeFrame;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class EsQueryProcessor {
-    private ProducerTemplate template;
+// TODO: Extract EsTaskMeasurement and EsTaskConfig
+public class EsTaskMeasurement{
+	private ProducerTemplate template;
+	private EsTaskConfig esTaskConfig;
 
 	public void setTemplate(ProducerTemplate template) {
 		this.template = template;
 	}
 
-	public TaskConfig buildTaskConfigDto(@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application, @Header(com.apm4all.tracy.apimodel.Headers.TASK) String task)	{
-//		System.out.println("*** buildTaskConfigDto ***");
-		return new TaskConfig(application, task);
-	}
-	
-	// TODO: Throw custom exceptions: ESQueryBuildingException ESResponseMarshallingException 
-	public TaskConfig getTaskConfigFromEs(String application, String task) throws IOException {
-		Map<String, Object> headers = new HashMap<String, Object>();
-		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
-		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
-		String filter = "application:\"" + application + "\" AND task:\"" + task + "\"";
-		BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-				.must(QueryBuilders.queryStringQuery(filter));
-		XContentBuilder contentBuilder = XContentFactory.jsonBuilder().startObject().field("query");
-		queryBuilder.toXContent(contentBuilder, null);
-		contentBuilder.endObject();
-//		System.out.println("=== Built query: " +  contentBuilder.string());
-        SearchResponse response = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
-        // Handle response here
-        TaskConfig taskConfig;
-        if (response.getHits().getTotalHits() > 0)	{
-        String responseString = response.getHits().getAt(0).getSourceAsString();
-//        System.out.println("=== " +responseString);
-        	ObjectMapper mapper = new ObjectMapper();
-        	taskConfig = mapper.readValue(responseString, TaskConfig.class);
-        }
-        else	{
-        	taskConfig = null;
-        }
-        return taskConfig;
-	}
-	
-	public void getTaskConfig(
-			Exchange exchange,
-			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
-			@Header(com.apm4all.tracy.apimodel.Headers.TASK) String task
-				) throws IOException	{
-		TaskConfig taskConfig = getTaskConfigFromEs(application, task);
-		if (taskConfig != null)	{
-			// TODO: Better to use an exception here
-			exchange.getIn().setBody(taskConfig);
-		}
-		else	{
-        	// TODO: Add standardized error response and set httpStatus 
-			exchange.getIn().setBody("not found");
-		}
-		
-	}
-	
-	public void setTaskConfig(
-			Exchange exchange,
-			@Body TaskConfig taskConfig,
-			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
-			@Header(com.apm4all.tracy.apimodel.Headers.TASK) String task,
-			@Headers Map<String, Object> headers)
-					throws JsonProcessingException	{
-//		System.out.println("*** setTaskConfig ***");
-		ObjectMapper mapper = new ObjectMapper();
-		String taskConfigAsJson = mapper.writeValueAsString(taskConfig);
-		// TODO: Handle JsonProcessingException, define error message and set http status
-		headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "entities");
-		headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "TaskConfig");
-		headers.put(ElasticsearchConstants.PARAM_INDEX_ID, "TaskConfig");
-        template.requestBodyAndHeaders("elasticsearch://local?operation=INDEX", taskConfigAsJson, headers);
+	public void setEsTaskConfig(EsTaskConfig esTaskConfig)	{
+		this.esTaskConfig = esTaskConfig;
 	}
 
-	private void populateTaskMeasurementFromTaskConfig(
-			String application, 
-			String task, 
-			TaskConfig taskConfig, 
-			TaskMeasurement taskMeasurement)	{
-		SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
-		singleApdexTimechart.setApplication(application);
-		singleApdexTimechart.setTask(task);
-		singleApdexTimechart.setRttF(taskConfig.getMeasurement().getRttFrustrated());
-		singleApdexTimechart.setRttT(taskConfig.getMeasurement().getRttTolerating());
-		singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
-	}
-	
 	public void getTaskMeasurement(
 			Exchange exchange,
 			@Header(com.apm4all.tracy.apimodel.Headers.APPLICATION) String application,
@@ -142,7 +67,7 @@ public class EsQueryProcessor {
 		headers.put(MEASUREMENT_STAGE_COMPLETED, "started");
 		try {
 			// Get taskConfig for application,task 
-			TaskConfig taskConfig = getTaskConfigFromEs(application, task);
+			TaskConfig taskConfig = esTaskConfig.getTaskConfigFromEs(application, task);
 			headers.put(MEASUREMENT_STAGE_COMPLETED, "gotTaskConfig");
 			// Get earliest, latest and snap if provided
 			TimeFrame timeFrame = new TimeFrame(earliest, latest, snap, taskConfig);
@@ -184,13 +109,25 @@ public class EsQueryProcessor {
 			exchange.getIn().setBody("Failed to retrieved taskMeasurement");
 		}
 	}
-	
+
+    private void populateTaskMeasurementFromTaskConfig(
+            String application,
+            String task,
+            TaskConfig taskConfig,
+            TaskMeasurement taskMeasurement)	{
+        SingleApdexTimechart singleApdexTimechart = taskMeasurement.getSingleApdexTimechart();
+        singleApdexTimechart.setApplication(application);
+        singleApdexTimechart.setTask(task);
+        singleApdexTimechart.setRttF(taskConfig.getMeasurement().getRttFrustrated());
+        singleApdexTimechart.setRttT(taskConfig.getMeasurement().getRttTolerating());
+        singleApdexTimechart.setRttUnit(taskConfig.getMeasurement().getRttUnit());
+    }
 	private Double calculateApdexScore(long invocations, long satisfied, long tolerating) {
 		Double apdexScore;
 		if(invocations == 0) {
 			  throw new ArithmeticException("Division by zero!");
 		}
-		apdexScore = (double) (((double)satisfied + ((double)tolerating/2)) / (double)invocations);
+		apdexScore = ((double)satisfied + ((double)tolerating/2)) / (double)invocations;
 //					System.out.println("apdex: " + apdexScore 
 //							+ ", invocations " + invocations
 //							+ ", satisfied " + satisfied

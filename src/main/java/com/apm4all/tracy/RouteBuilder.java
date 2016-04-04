@@ -111,7 +111,7 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("sort").type(query).description("The fields to sort by").dataType("string").endParam()
               .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
-            	.to("bean:taskAnalysisService?method=getTaskAnalysis(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})")
+                .to("direct:taskAnalysis")
 
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
                .to("direct:toogleTracySimulation");
@@ -243,105 +243,22 @@ public class RouteBuilder extends SpringRouteBuilder {
 //          .log("${headers}")
 		  .to("elasticsearch://local?operation=INDEX");
 
-        from("direct:taskMeasurement").routeId("taskMeasurment")
-          .choice()
-            .when(simple("${in.header.application} contains 'demo-live'"))
-              .bean("esTaskMeasurement", "getTaskMeasurement")
-            .when(simple("${in.header.application} contains 'demo-static'"))
-              .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
-            .end();
+        from("direct:taskMeasurement").routeId("taskMeasurement")
+                .choice()
+                    .when(simple("${in.header.application} contains 'demo-live'"))
+                        .bean("esTaskMeasurement", "getTaskMeasurement")
+                    .when(simple("${in.header.application} contains 'demo-static'"))
+                        .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})")
+                .end();
 
-          // Process SearchResponse
-//          .to("bean:taskMeasurementService?method=getTaskMeasurement(${header.application}, ${header.task})");
-//        GET _search
-//        {
-//        "size": 0,
-//           "query": {
-//              "filtered": {
-//                 "query": {
-//                    "query_string": {
-//                       "analyze_wildcard": true,
-//                       "query": "label:\"inner\""
-//                    }
-//                 }
-//              }
-//           },
-//           "aggs": {
-//              "articles_over_time": {
-//                 "date_histogram": {
-//                    "field": "@timestamp",
-//                    "interval": "1m",
-//                    "min_doc_count": 0
-//                 }
-//              }
-//            }
-//        }
-
-
-
-//		from("restlet:http://localhost:8050/tracy/segment?restletMethod=POST")
-			// Tracy publishing should never block the sender
-			// waitForTaskToComplete allows endpoint to respond
-			// without having to wait until tracy is finally stored
-//			.to("seda:tracySegmentProcessor?waitForTaskToComplete=Never")
-			// Return taskId-component as reference with HTTP 202 code (Accepted)
-//			.setBody(simple("{\"status\":\"processing\"}"))
-//			.setHeader("Access-Control-Allow-Origin", simple("*"))
-//			.process(new Processor()	{
-//				@Override
-//				public void process(Exchange exchange) throws Exception {
-//					Response response = exchange.getIn().getHeader(RestletConstants.RESTLET_RESPONSE, Response.class);
-//		            response.setStatus(Status.SUCCESS_ACCEPTED);
-//				}
-//			});
-
-//		from("seda:tracySegmentProcessor")
-//			.unmarshal().json(JsonLibrary.Jackson)
-//			.transform().simple("${body[tracySegment]}")
-			// TODO: Validate tracySegment messages
-			// TODO: Send invalid segments to audit log
-//			.split(body())
-//			.to("seda:storeTracy");
-
-
-		// TODO: POST tracy-2015.04.22/webapp1/AAAAAAAAAAAAAAAAAAA001-O001
-//		{
-//		    "taskId": "AAAAAAAAAAAAAAAAAAA001",
-//		    "optId": "O001",
-//		    "msecBefore": 1429680861000,
-//		    "@timestamp": "2015-04-22T06:34:12.000",
-//		    "component":"webapp1",
-//		    "label": "manual"
-//		}
-//		from("seda:storeTracy")
-//			// Store Tracy frames in repository
-//			.process(new Processor()	{
-//				@Override
-//				public void process(Exchange exchange) throws Exception {
-//					@SuppressWarnings("unchecked")
-//					Map<String, Object> tracyMap = (Map<String, Object>) exchange.getIn().getBody();
-//					String indexId = tracyMap.get("taskId") + "_" + tracyMap.get("optId");
-//					
-//					// "_id": "<taskId>_<optId>",
-//					exchange.getOut().setHeader("indexId", indexId);
-//					
-//					//TODO: Move  DateTimeZone.setDefault(DateTimeZone.UTC); to where it is only called once
-//					DateTimeZone.setDefault(DateTimeZone.UTC);
-//					// "@timestamp": "2015-03-10T23:33:27.707",
-//					Long msecBefore = (Long) tracyMap.get("msecBefore");
-//					DateTime dateTime = new DateTime(msecBefore);
-//					String timestamp = dateTime.toString("yyyy-MM-dd'T'HH:mm:ss.SSS");
-//					tracyMap.put("@timestamp", timestamp);
-//					
-//					// "_index": "tracy-2015.03.10",
-//					String index = "tracy" + "-" + dateTime.toString("yyyy.MM.dd");
-//					
-//		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_NAME, index);
-//		            exchange.getOut().setHeader(ElasticsearchConfiguration.PARAM_INDEX_TYPE, "taskType1");
-//					
-//					exchange.getOut().setBody(tracyMap);
-//				}
-//			})
-//			.to("elasticsearch://local?operation=INDEX");
+        from("direct:taskAnalysis").routeId("taskAnalysis")
+//                .log("${headers}")
+                .choice()
+                    .when(simple("${in.header.application} contains 'demo-live'"))
+                        .bean("esTaskAnalysis", "getTaskAnalysis")
+                    .when(simple("${in.header.application} contains 'demo-static'"))
+                        .to("bean:taskAnalysisService?method=getTaskAnalysis" +
+                                "(${header.application}, ${header.task}, ${header.earliest}, ${header.latest}, ${header.filter}, ${header.sort}, ${header.limit}, ${header.offset})")
+                .end();
 	}
 }

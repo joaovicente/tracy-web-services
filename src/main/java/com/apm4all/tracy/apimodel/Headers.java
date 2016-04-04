@@ -9,4 +9,6 @@ public class Headers {
     public static final String LATEST = "latest";
     public static final String SNAP = "snap";
     public static final String TASK_MEASUREMENT = "taskMeasurement";
+    public static final String FILTER = "filter";
+    public static final String SORT = "sort";
 }

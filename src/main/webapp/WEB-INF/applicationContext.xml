@@ -34,6 +34,10 @@
         <property name="template" ref="producerTemplate"/>
         <property name="esTaskConfig" ref="esTaskConfig"/>
     </bean>
+    <bean id="esTaskAnalysis" class="com.apm4all.tracy.backend.EsTaskAnalysis">
+        <property name="template" ref="producerTemplate"/>
+        <property name="esTaskConfig" ref="esTaskConfig"/>
+    </bean>
 
   <!-- Camel Context -->     
   <camelContext xmlns="http://camel.apache.org/schema/spring">

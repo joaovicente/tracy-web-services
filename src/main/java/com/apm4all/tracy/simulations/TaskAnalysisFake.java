@@ -96,13 +96,13 @@ public class TaskAnalysisFake implements TaskAnalysis {
 	    // long offset = 61010; // minOffset
 	    long offset = 3601000L; // hourOffset
 	    
-	    if (this.application.contains("demo-static"))	{
-	    	// msec unit
-	    	offset = (ll/10L);
+	    if (this.application.contains("demo-static-batch") )	{
+			// hour unit
+			offset = ll*3601000L/10L;
 	    }
 	    else	{
-	    	// hour unit
-	    	offset = ll*3601000L/10L;
+			// msec unit
+			offset = (ll/10L);
 	    }
 	    
 	    String host = "46.7.188.254";

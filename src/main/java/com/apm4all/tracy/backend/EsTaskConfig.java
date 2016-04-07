@@ -81,6 +81,4 @@ public class EsTaskConfig {
         headers.put(ElasticsearchConstants.PARAM_INDEX_ID, "TaskConfig");
         template.requestBodyAndHeaders("elasticsearch://local?operation=INDEX", taskConfigAsJson, headers);
     }
-
-
 }

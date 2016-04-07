@@ -151,9 +151,7 @@ public class EsQuerySamples {
         System.out.println(timeFrame);
         long earliest = timeFrame.getEarliest();
         long latest = timeFrame.getLatest();
-        String taskDefiningFilter = taskConfig.getDefiningFilter();
-
-        taskDefiningFilter += " AND (taskId:\"15F679A3\" OR taskId:\"5C3222C7\")";
+        String taskDefiningFilter = "taskId:\"15F679A3\" OR taskId:\"5C3222C7\"";
 
         BoolQueryBuilder queryBuilder1 = QueryBuilders.boolQuery()
                 .must(QueryBuilders.rangeQuery("@timestamp").gt(earliest).lt(latest))

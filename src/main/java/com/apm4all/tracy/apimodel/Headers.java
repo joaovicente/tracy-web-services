@@ -11,4 +11,6 @@ public class Headers {
     public static final String TASK_MEASUREMENT = "taskMeasurement";
     public static final String FILTER = "filter";
     public static final String SORT = "sort";
+    public static final String OFFSET = "offset";
+    public static final String LIMIT = "limit";
 }

@@ -77,9 +77,6 @@ public class EsTaskAnalysis {
             taskAnalysis = new TaskAnalysisFake(application, task, Long.parseLong(earliest),
                     Long.parseLong(latest), filter, sort, limitInt, offsetInt);
         }
-
-
-
         return taskAnalysis;
     }
 
@@ -113,11 +110,13 @@ public class EsTaskAnalysis {
         queryBuilder.toXContent(contentBuilder, null);
         contentBuilder.field("size", limit);
 
-        // "sort": [ { "msecElapsed" : {"unmapped_type" : "long"} } ]
-        HashMap<String, String> unmappedType = new HashMap<String, String>();
-        unmappedType.put("unmapped_type", "long");
+        // "sort": [ { "msecElapsed" : {"unmapped_type" : "long", "order" : "desc"} } ]
+
+        HashMap<String, String> sortOptions = new HashMap<String, String>();
+        sortOptions.put("unmapped_type", "long");
+        sortOptions.put("order", "desc");
         HashMap<String, Map> msecElapsed = new HashMap<String, Map>();
-        msecElapsed.put("msecElapsed", unmappedType);
+        msecElapsed.put("msecElapsed", sortOptions);
         ArrayList sortList = new ArrayList();
         sortList.add(msecElapsed);
         contentBuilder.field("sort", sortList);

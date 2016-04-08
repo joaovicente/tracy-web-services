@@ -158,8 +158,8 @@ public class RouteBuilder extends SpringRouteBuilder {
 				public void process(Exchange exchange) throws Exception {
 					//TODO: Extract Tracy generation to a separate thread
 					final String COMPONENT = "hello-tracy";
-					final String OUTER = "outer";
-					final String INNER = "inner";
+					final String OUTER = "serviceEndpoint";
+					final String INNER = "dodgyBackend";
 			    	int status = 200;
 			    	long random = new Double(Math.random() * 100).longValue()+1;
 			    	if      ( random <= 80 )	{ status = 200; }//  80%  200: OK
@@ -174,10 +174,10 @@ public class RouteBuilder extends SpringRouteBuilder {
 		    		Tracy.before(OUTER);
 		    		Tracy.annotate("status", status);
 		    		Tracy.before(INNER);
-		        	long delayInMsec = new Double(Math.random() * 10).longValue() + 10;
+					long delayInMsec = new Double(Math.random() * 200).longValue() + 100;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(INNER);
-		        	delayInMsec = new Double(Math.random() * 200).longValue() + 100;
+					delayInMsec = new Double(Math.random() * 10).longValue() + 10;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(OUTER);
 					exchange.getIn().setBody(Tracy.getEventsAsJson());

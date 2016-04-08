@@ -64,15 +64,21 @@ public class EsTaskAnalysis {
             // Get list of (20) taskIds for search criteria (see EsQueryProcessor getTaskConfigFromEs)
             List<String> taskIds = getTaskIdsMatchingCriteria(taskConfig, timeFrame, filter, sort, limitInt, offsetInt, headers);
             // Get Tracy events for each taskId
-            Map<String, List<String>> tracyEventsMap = getTracyForTaskIds(taskIds, timeFrame, headers);
-            // TODO: Fill in TaskAnalysis
-
+            Map<String, List<Object>> tracyEventsMap = getTracyForTaskIds(taskIds, timeFrame, headers);
             System.out.println("== tracyEventsMap:" + tracyEventsMap.toString());
+            // TODO: Fill in TaskAnalysis
+            RetrievedTaskAnalysis retrievedTaskAnalysis =
+                    new RetrievedTaskAnalysis(application, task, timeFrame.getEarliest(),
+                            timeFrame.getLatest(), filter, sort, limitInt, offsetInt);
+            retrievedTaskAnalysis.setTracyTasks(taskIds, tracyEventsMap);
+            taskAnalysis = retrievedTaskAnalysis;
         }
         else    {
             taskAnalysis = new TaskAnalysisFake(application, task, Long.parseLong(earliest),
                     Long.parseLong(latest), filter, sort, limitInt, offsetInt);
         }
+
+
 
         return taskAnalysis;
     }
@@ -141,7 +147,7 @@ public class EsTaskAnalysis {
         return taskIds;
     }
 
-    private Map<String, List<String>> getTracyForTaskIds(
+    private Map<String, List<Object>> getTracyForTaskIds(
             List<String> taskIds,
             TimeFrame timeFrame,
             Map<String, Object> headers ) throws IOException
@@ -176,12 +182,15 @@ public class EsTaskAnalysis {
 
         // Put all Tracy events in a Map keyed by taskId and containing list of taskId Tracy events
         ObjectMapper objectMapper = new ObjectMapper();
-        HashMap<String, List<String>> tracyEventsMap = new HashMap<>();
+        HashMap<String, List<Object>> tracyEventsMap = new HashMap<>();
         for(int i=0; i < response.getHits().getTotalHits() ; i++)   {
             String tracyEventAsString = response.getHits().getAt(i).getSourceAsString();
             JsonNode jsonNode = objectMapper.readTree(tracyEventAsString);
+
+            Map tracyAsMap = objectMapper.readValue(tracyEventAsString, Map.class);
+
             String taskId = jsonNode.get("taskId").textValue();
-            List<String> tracyEventList;
+            List<Object> tracyEventList;
             if (!tracyEventsMap.containsKey(taskId))    {
                 tracyEventList = new ArrayList<>();
                 tracyEventsMap.put(taskId, tracyEventList);
@@ -189,7 +198,7 @@ public class EsTaskAnalysis {
             else    {
                 tracyEventList = tracyEventsMap.get(taskId);
             }
-            tracyEventList.add(tracyEventAsString);
+            tracyEventList.add(tracyAsMap);
         }
         return tracyEventsMap;
     }

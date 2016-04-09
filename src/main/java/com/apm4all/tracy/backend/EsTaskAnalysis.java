@@ -56,7 +56,7 @@ public class EsTaskAnalysis {
         headers.put(ElasticsearchConstants.PARAM_INDEX_NAME, "tracy*");
         headers.put(ElasticsearchConstants.PARAM_INDEX_TYPE, "tracy");
 
-        System.out.println("=== headers: " + headers.toString());
+//        System.out.println("=== headers: " + headers.toString());
 
         if (!headers.containsKey("mock")) {
             TaskConfig taskConfig = esTaskConfig.getTaskConfigFromEs(application, task);
@@ -65,7 +65,7 @@ public class EsTaskAnalysis {
             List<String> taskIds = getTaskIdsMatchingCriteria(taskConfig, timeFrame, filter, sort, limitInt, offsetInt, headers);
             // Get Tracy events for each taskId
             Map<String, List<Object>> tracyEventsMap = getTracyForTaskIds(taskIds, timeFrame, headers);
-            System.out.println("== tracyEventsMap:" + tracyEventsMap.toString());
+//            System.out.println("== tracyEventsMap:" + tracyEventsMap.toString());
             // TODO: Fill in TaskAnalysis
             RetrievedTaskAnalysis retrievedTaskAnalysis =
                     new RetrievedTaskAnalysis(application, task, timeFrame.getEarliest(),
@@ -128,20 +128,21 @@ public class EsTaskAnalysis {
 
         contentBuilder.endObject();
 
-		System.out.println("=== Built query: " +  contentBuilder.string());
+//		System.out.println("=== Built query: " +  contentBuilder.string());
+        headers.put("taskIdsMatchingCriteriaRequest", contentBuilder.string());
         SearchResponse response = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
 
-        System.out.println("===  response =" + response.toString());
+//        System.out.println("===  response =" + response.toString());
 
         ArrayList<String> taskIds = new ArrayList<String>();
         // Handle response
 
         long hitCount = Math.min(response.getHits().getTotalHits(), limit);
-        System.out.println("===  hitCount: " + hitCount);
+//        System.out.println("===  hitCount: " + hitCount);
         for (int i=0 ; i < hitCount ; i++)   {
             String taskId = response.getHits().getAt(i).getFields().get("taskId").getValues().get(0).toString();
             taskIds.add(taskId);
-            System.out.println("===  taskId =" + taskId );
+//            System.out.println("===  taskId =" + taskId );
         }
         return taskIds;
     }
@@ -175,8 +176,9 @@ public class EsTaskAnalysis {
         queryBuilder.toXContent(contentBuilder, null);
         contentBuilder.field("size", MAX_TRACY_EVENTS); // large number of Tracy events we
         contentBuilder.endObject();
-        System.out.println("== Analysis get tracy events query:" + contentBuilder.string());
+//        System.out.println("== Analysis get tracy events query:" + contentBuilder.string());
 
+        headers.put("getTracyForTaskIdsRequest", contentBuilder.string());
         SearchResponse response = template.requestBodyAndHeaders("elasticsearch://local?operation=SEARCH", contentBuilder, headers, SearchResponse.class);
 
         // Put all Tracy events in a Map keyed by taskId and containing list of taskId Tracy events

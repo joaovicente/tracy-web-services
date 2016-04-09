@@ -350,23 +350,30 @@ public class EsTaskMeasurement{
 				Filters counters = histogramBucket.getAggregations().get("counters");
 				Bucket satisfiedBucket = counters.getBucketByKey("success");
 				Stats stats = satisfiedBucket.getAggregations().get("stats");
-                // Populate Max
+
+
+                try {
+                    // Populate Max
 //				System.out.println("Max [" + stats.getMax() + "]");
-				max.add(round(stats.getMax(),0));
-				
-				Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
-				
-				for (Percentile entry : percentiles) {
-				    double percent = entry.getPercent();    // Percent
-				    if (percent == 95.0)	{
-                        // Populate p95
-				    	double value = entry.getValue();        // Value
+                    max.add(round(stats.getMax(),0));
+
+                    Percentiles percentiles = satisfiedBucket.getAggregations().get("percentiles");
+
+                    for (Percentile entry : percentiles) {
+                        double percent = entry.getPercent();    // Percent
+                        if (percent == 95.0)	{
+// Populate p95
+                            double value = entry.getValue();        // Value
 //				    	System.out.println("percent [" + percent + "], value [" +  value + "]");
-				    	p95.add(round(value,0));
-				    }
-				}
-			
-				Filters latencyHistogram = satisfiedBucket.getAggregations().get("latencyHistogram");
+                            p95.add(round(value,0));
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    p95.add(null);
+                    max.add(null);
+                }
+
+                Filters latencyHistogram = satisfiedBucket.getAggregations().get("latencyHistogram");
                 // Populate latencyHistogram
 				int i = 0;
 				for (LatencyHistogramRow row : latencyHistogramRows.asList())	{ // Sort by latency descending

@@ -45,7 +45,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class RouteBuilder extends SpringRouteBuilder {
 
 	private boolean tracySimulationEnabled = false;
-	private boolean flushTracy = true; // Flush tracy at start-up
+	private boolean flushTracy = false; // DONT Flush tracy at start-up
 	static final String TRACY_SIMULATION_ENABLED = "TRACY_SIMULATION_ENABLED";
 	static final String FLUSH_TRACY = "FLUSH_TRACY";
 
@@ -102,6 +102,9 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("task").type(path).description("The task").dataType("string").endParam()
                 .to("bean:esTaskConfig?method=getTaskConfig")
 
+			.delete("/tracy").description("Delete all Tracy events stored in backed")
+				.to("direct:flushTracyRequest")
+
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
               .param().name("task").type(path).description("The task to analyse").dataType("string").endParam()
@@ -134,10 +137,10 @@ public class RouteBuilder extends SpringRouteBuilder {
 			});
 
         from("quartz://everySecond?cron=0/1+*+*+*+*+?").routeId("everySecondTimer")
-          .process(new Processor()	{
+            .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
-					Map<String, Object> headers = exchange.getIn().getHeaders();
+                    Map<String, Object> headers = exchange.getIn().getHeaders();
 					if (tracySimulationEnabled)	{
 					  headers.put(TRACY_SIMULATION_ENABLED, new Boolean(true));
 					}
@@ -146,10 +149,11 @@ public class RouteBuilder extends SpringRouteBuilder {
 					}
 				}
 			})
+          .to("seda:flushTracy")
           .choice()
             .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
               .to("seda:generateTracy")
-              .to("seda:flushOldTracy");
+                .end();
 
         from("seda:generateTracy").routeId("generateTracy")
           .setBody(simple(""))
@@ -186,9 +190,19 @@ public class RouteBuilder extends SpringRouteBuilder {
 			})
 			.to("seda:ingestTracy");
 
-        from("seda:flushOldTracy").routeId("flushOldTracy")
-          //TODO: Prepare older than 60 minutes Tracy events
-          .process(new Processor()	{
+        from("direct:flushTracyRequest").routeId("flushTracyRequest")
+            .process(new Processor()	{
+                @Override
+                public void process(Exchange exchange) throws Exception {
+                    flushTracy = true;
+                }
+            })
+            .setBody(simple("Flushed all Tracy events"))
+            .log("Flush request accepted");
+
+        from("seda:flushTracy").routeId("flushTracy")
+//            .log("Flush request processing started")
+            .process(new Processor()	{
 				@Override
 				public void process(Exchange exchange) throws Exception {
 					Map<String, Object> headers = exchange.getIn().getHeaders();
@@ -201,19 +215,21 @@ public class RouteBuilder extends SpringRouteBuilder {
 						  headers.clear();
 						  headers.put(FLUSH_TRACY, new Boolean(false));
 					}
-//					exchange.getIn().setBody("");
+					exchange.getIn().setBody("");
 				}
 			})
 			.setHeader(Exchange.HTTP_METHOD, constant(org.apache.camel.component.http4.HttpMethods.DELETE))
+//            .log("Flush request ready to be sent")
 			.choice()
 			  .when(simple("${in.header.FLUSH_TRACY} == true"))
-                .log("flushing old tracy")
-			    .to("http4://localhost:9200/tracy-hello-tracy-*/tracy")
+                //TODO: Hanle 404 status (nothing to delete) gracefully
+			    .to("http4://localhost:9200/tracy-*/tracy")
                   //TODO: Investigate why Camel ES Delete is not working
 //			      .setHeader(ElasticsearchConstants.PARAM_INDEX_NAME, simple("tracy-hello-tracy-*"))
 //                 .setHeader(ElasticsearchConstants.PARAM_INDEX_TYPE, simple("tracy"))
 //                .to("elasticsearch://local?operation=DELETE");
-			    .endChoice();
+                .log("Flush request sent")
+            .end();
 
         from("seda:ingestTracy").routeId("ingestTracy")
           //TODO: If tracySegment instead of tracyFrame, split into Tracy frames (not required for MVC)

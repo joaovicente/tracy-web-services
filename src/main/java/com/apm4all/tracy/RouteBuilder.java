@@ -102,8 +102,11 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("task").type(path).description("The task").dataType("string").endParam()
                 .to("bean:esTaskConfig?method=getTaskConfig")
 
-			.delete("/tracy").description("Delete all Tracy events stored in backed")
-				.to("direct:flushTracyRequest")
+			.get("/registry").description("Get Tracy Registry containing supported environments")
+				.to("direct:registry")
+
+			.get("/capabilities").description("Get Server capabilities (Applications/Tasks supported and associated views)")
+				.to("direct:capabilities")
 
             .get("/applications/{application}/tasks/{task}/analysis").description("Get analysis for a Task").outType(TaskAnalysisFake.class)
               .param().name("application").type(path).description("The application to analyse").dataType("string").endParam()
@@ -115,6 +118,9 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("limit").type(query).defaultValue("20").description("The number of records to analyse, i.e. page size, default is 20").dataType("integer").endParam()
               .param().name("offset").type(query).description("The page number").defaultValue("1").dataType("integer").endParam()
                 .to("direct:taskAnalysis")
+
+			.delete("/tracy").description("Delete all Tracy events stored in backed")
+				.to("direct:flushTracyRequest")
 
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
                .to("direct:toogleTracySimulation");
@@ -152,7 +158,8 @@ public class RouteBuilder extends SpringRouteBuilder {
           .to("seda:flushTracy")
           .choice()
             .when(simple("${in.header.TRACY_SIMULATION_ENABLED} == true"))
-              .to("seda:generateTracy")
+//              .loop(100).to("seda:generateTracy")
+				.to("seda:generateTracy") // To not loop
                 .end();
 
         from("seda:generateTracy").routeId("generateTracy")
@@ -177,10 +184,12 @@ public class RouteBuilder extends SpringRouteBuilder {
 		    		Tracy.setContext(null, null, COMPONENT);
 		    		Tracy.before(OUTER);
 		    		Tracy.annotate("status", status);
-		    		Tracy.before(INNER);
+					Tracy.before(INNER);
+//					long delayInMsec = new Double(Math.random() * 2).longValue() + 2;
 					long delayInMsec = new Double(Math.random() * 200).longValue() + 100;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(INNER);
+//					delayInMsec = new Double(Math.random() * 2).longValue() + 2;
 					delayInMsec = new Double(Math.random() * 10).longValue() + 10;
 		        	Thread.sleep(delayInMsec);
 		    		Tracy.after(OUTER);
@@ -258,6 +267,31 @@ public class RouteBuilder extends SpringRouteBuilder {
 //          .log("${body}")
 //          .log("${headers}")
 		  .to("elasticsearch://local?operation=INDEX");
+
+		from("direct:registry").routeId("registry")
+				.process(new Processor()	{
+					@Override
+					public void process(Exchange exchange) throws Exception {
+						ObjectMapper m = new ObjectMapper();
+						Map<String,Object> registry = m.readValue(
+								"{\"environments\":[{\"name\":\"Local\",\"servers\":[{\"url\":\"http://localhost:8080/tws/v1\"}]}]}",
+								Map.class);
+						exchange.getIn().setBody(registry);
+					}
+				});
+
+		from("direct:capabilities").routeId("capabilities")
+				.process(new Processor()	{
+					@Override
+					public void process(Exchange exchange) throws Exception {
+						ObjectMapper m = new ObjectMapper();
+						Map<String,Object> capabilities = m.readValue(
+								"{\"capabilities\":{\"applications\":[{\"name\":\"appX\",\"views\":[{\"label\":\"Measurement\",\"name\":\"measurement\"}],\"tasks\":[{\"name\":\"taskX1\",\"views\":[{\"label\":\"Measurement\",\"name\":\"measurement\"}]}]}]}}",
+								Map.class);
+						exchange.getIn().setBody(capabilities);
+					}
+				});
+
 
         from("direct:taskMeasurement").routeId("taskMeasurement")
                 .choice()

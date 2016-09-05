@@ -19,6 +19,7 @@ package com.apm4all.tracy;
 import static org.apache.camel.model.rest.RestParamType.path;
 import static org.apache.camel.model.rest.RestParamType.query;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.camel.Exchange;
@@ -102,6 +103,9 @@ public class RouteBuilder extends SpringRouteBuilder {
               .param().name("task").type(path).description("The task").dataType("string").endParam()
                 .to("bean:esTaskConfig?method=getTaskConfig")
 
+			.options("/applications/{application}/tasks/{task}/config")
+				.to("direct:trash")
+
 			.get("/registry").description("Get Tracy Registry containing supported environments")
 				.to("direct:registry")
 
@@ -123,7 +127,39 @@ public class RouteBuilder extends SpringRouteBuilder {
 				.to("direct:flushTracyRequest")
 
             .post("/tracySimulation").description("Produce Tracy for simulation purposes")
-               .to("direct:toogleTracySimulation");
+               .to("direct:toogleTracySimulation")
+
+			.get("/demo")
+				.to("direct:getSimulation")
+
+			.post("/demo")
+				.to("direct:setSimulation");
+
+
+		from("direct:trash").stop();
+
+		from("direct:getSimulation").routeId("getSimulation")
+				.setBody(simple(""))
+				.process(new Processor()	{
+					@Override
+					public void process(Exchange exchange) throws Exception {
+						Map<String,Boolean> state = new HashMap<String,Boolean>();
+						state.put("demo", tracySimulationEnabled);
+						exchange.getIn().setBody(state);
+					}
+				});
+
+		from("direct:setSimulation").routeId("setSimulation")
+	            .log("${body}")
+				.process(new Processor()	{
+					@Override
+					public void process(Exchange exchange) throws Exception {
+						Map<String,Boolean> state = (Map<String, Boolean>) exchange.getIn().getBody();
+						tracySimulationEnabled = state.get("demo");
+						state.put("demo", tracySimulationEnabled);
+						exchange.getIn().setBody(state);
+					}
+				});
 
         from("direct:toogleTracySimulation").routeId("toogleTracySimulation")
           .setBody(simple(""))
@@ -274,7 +310,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 					public void process(Exchange exchange) throws Exception {
 						ObjectMapper m = new ObjectMapper();
 						Map<String,Object> registry = m.readValue(
-								"{\"environments\":[{\"name\":\"Local\",\"servers\":[{\"url\":\"http://localhost:8080/tws/v1\"}]}]}",
+                                "{\"environments\":[{\"name\":\"Local1\",\"servers\":[{\"url\":\"http://localhost:8080/tws/v1\"}]},{\"name\":\"Local2\",\"servers\":[{\"url\":\"http://localhost:8080/tws/v1\"}]}]}",
 								Map.class);
 						exchange.getIn().setBody(registry);
 					}

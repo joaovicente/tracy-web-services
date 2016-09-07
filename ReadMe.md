@@ -13,7 +13,7 @@ This service is used by Tracy Web Application (https://github.com/joaovicente/tr
 ### 0.2.0
 * Added embedded ElasticSearch
 * Added REST endpoints for Task measurement and analysis 
-* Added support for demo-live
+* Added support for demo-live 
 
 ### 0.1.0
 * Upgraded to Camel 2.16

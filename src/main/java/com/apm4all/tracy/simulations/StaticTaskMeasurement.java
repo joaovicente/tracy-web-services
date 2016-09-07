@@ -69,19 +69,19 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 	
 	private double produceP95() {
 		double p95 = 0.0;
-		if (this.task.contains("Excellent"))	{
+		if (this.task.contains("excellent"))	{
 			p95 = 160.0;
 		}
-		else if(this.task.contains("Good")){
+		else if(this.task.contains("good")){
 			p95 = 250.0;
 		}
-		else if(this.task.contains("Fair")){
+		else if(this.task.contains("fair")){
 			p95 = 400.0;
 		}
-		else if(this.task.contains("Poor")){
+		else if(this.task.contains("poor")){
 			p95 = 500.0;
 		}
-		else if(this.task.contains("Unacceptable")){
+		else if(this.task.contains("unacceptable")){
 			p95 = 800.0;
 		}
 		return p95;
@@ -100,19 +100,19 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 	
 	private double produceApdexScore()	{
 		double apdexScore = 0.0;
-		if (this.task.contains("Excellent"))	{
+		if (this.task.contains("excellent"))	{
 			apdexScore = midPointWithVariance(APDEX_EXCELLENT_LL, APDEX_EXCELLENT_UL);
 		}
-		else if(this.task.contains("Good")){
+		else if(this.task.contains("good")){
 			apdexScore = midPointWithVariance(APDEX_GOOD_LL, APDEX_GOOD_UL);
 		}
-		else if(this.task.contains("Fair")){
+		else if(this.task.contains("fair")){
 			apdexScore = midPointWithVariance(APDEX_FAIR_LL, APDEX_FAIR_UL);
 		}
-		else if(this.task.contains("Poor")){
+		else if(this.task.contains("poor")){
 			apdexScore = midPointWithVariance(APDEX_POOR_LL, APDEX_POOR_UL);
 		}
-		else if(this.task.contains("Unacceptable")){
+		else if(this.task.contains("unacceptable")){
 			apdexScore = midPointWithVariance(APDEX_UNACCEPTABLE_UL-0.10, APDEX_UNACCEPTABLE_UL);
 		}
 		return apdexScore;
@@ -153,19 +153,19 @@ public class StaticTaskMeasurement implements TaskMeasurement {
 
 		// TODO: To be accurate should calculate total invocations minus errors 
     	int invocations = 400*16;
-		if (this.task.contains("Excellent"))	{
+		if (this.task.contains("excellent"))	{
 			latencyHistrogramSpread(counts, invocations, 100, 0, 0);
 		}
-		else if(this.task.contains("Good")){
+		else if(this.task.contains("good")){
 			latencyHistrogramSpread(counts, invocations, 80, 20, 0);
 		}
-		else if(this.task.contains("Fair")){
+		else if(this.task.contains("fair")){
 			latencyHistrogramSpread(counts, invocations, 50, 50, 0);
 		}
-		else if(this.task.contains("Poor")){
+		else if(this.task.contains("poor")){
 			latencyHistrogramSpread(counts, invocations, 40, 60, 0);
 		}
-		else if(this.task.contains("Unacceptable")){
+		else if(this.task.contains("unacceptable")){
 			latencyHistrogramSpread(counts, invocations, 0, 80, 20);
 		}    	
 		return counts;
@@ -222,20 +222,18 @@ public class StaticTaskMeasurement implements TaskMeasurement {
     	
     	// Latency histogram
     	latencyHistogram = new LatencyHistogram();
-    	latencyHistogram.setBins(Arrays.asList(new String[]
-    			{">720", 
-    			"675-719", "630-674", "585-629", "540-584", 
-    			"495-539", "450-494", "405-449", "360-404", 
-    			"315-359", "270-314", "225-269", "180-224", 
-    			"135-179", "90-134", "45-89", "0-44"}
-    	));
-    	latencyHistogram.setRttZone(Arrays.asList(new String[]
-    			{"Frustrated",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Tolerating","Tolerating","Tolerating","Tolerating",
-    			"Satisfied","Satisfied","Satisfied","Satisfied"}
-    	));
+    	latencyHistogram.setBins(Arrays.asList(
+				">720",
+				"675-719", "630-674", "585-629", "540-584",
+				"495-539", "450-494", "405-449", "360-404",
+				"315-359", "270-314", "225-269", "180-224",
+				"135-179", "90-134", "45-89", "0-44"));
+    	latencyHistogram.setRttZone(Arrays.asList(
+				"Frustrated",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Tolerating","Tolerating","Tolerating","Tolerating",
+				"Satisfied","Satisfied","Satisfied","Satisfied"));
     	
     	latencyHistogram.setCount(produceLatencyHistogramCounts());
     }

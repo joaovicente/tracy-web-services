@@ -21,7 +21,7 @@
 
   <groupId>com.apm4all.tracy</groupId>
   <artifactId>tracy-web-services</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 
   <name>Tracy Web Services</name>
   <description>Project delivering Tracy web services</description>
@@ -38,6 +38,13 @@
 
   <dependencies>
 
+    <!-- Tracy Dependencies -->
+  	<dependency>
+  		<groupId>com.apm4all.tracy</groupId>
+  		<artifactId>Tracy</artifactId>
+  		<version>3.1.0</version>
+  	</dependency>
+
     <!-- Camel Dependencies -->
     <dependency>
       <groupId>org.apache.camel</groupId>
@@ -52,6 +59,12 @@
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-servlet</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-quartz</artifactId>
       <version>2.16.1</version>
     </dependency>
 
@@ -79,9 +92,14 @@
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-elasticsearch</artifactId>
-      <version>2.15.1</version>
+      <version>2.16.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-http4</artifactId>
+      <version>2.15.1</version>
+    </dependency>
 
     <!-- Time utility -->
     <dependency>
@@ -136,18 +154,21 @@
       <artifactId>tracy-publisher</artifactId>
       <version>0.0-alpha</version>
     </dependency>
-    <dependency>
-      <groupId>com.apm4all.tracy</groupId>
-      <artifactId>Tracy</artifactId>
-      <version>3.1.0</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
     <finalName>tws</finalName>
-    <plugins>
-      <!-- Step 1. - Download Swagger UI project from GitHub -->
+	<plugins>
+ 		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
+				<source>1.7</source>
+				<target>1.7</target>
+			</configuration>
+		</plugin>
+<!-- Step 1. - Download Swagger UI project from GitHub -->
+<!-- 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>wagon-maven-plugin</artifactId>
@@ -166,8 +187,9 @@
           </execution>
         </executions>
       </plugin>
-
+ -->
       <!-- Step 2. -  Decompress content and move it to target/swagger-ui folder -->
+<!-- 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -192,7 +214,7 @@
           </execution>
         </executions>
       </plugin>
-
+-->
       <!-- Step 3. Copy Web Resources to target/classes but also to target/swagger-ui -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -222,8 +244,8 @@
           </execution>
         </executions>
       </plugin>
-
       <!-- Step 4. Add Swagger-ui Resources to the WAR -->
+<!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -239,7 +261,7 @@
           </webResources>
         </configuration>
       </plugin>
-
+-->
       <!-- allows running this example with mvn:jetty-run -->
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
@@ -258,3 +280,4 @@
     </plugins>
   </build>
 </project>
+

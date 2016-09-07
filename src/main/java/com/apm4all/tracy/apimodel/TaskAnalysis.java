@@ -9,24 +9,24 @@ import java.util.HashMap;
 public interface TaskAnalysis {
 
 	@ApiModelProperty(value = "The Appliation under analysis", required = true)
-	public abstract String getApplication();
+	String getApplication();
 
 	@ApiModelProperty(value = "The Task under analysis", required = true)
-	public abstract String getTask();
+	String getTask();
 
 	@ApiModelProperty(value = "The Tracy records for this task page (needs expansion - composite object)", required = true)
-	public abstract HashMap<String, Object> getTracyTasksPage();
+	HashMap<String, Object> getTracyTasksPage();
 
 	@ApiModelProperty(value = "The earliest time of the analysis window", required = true)
-	public abstract long getEarliest();
+	long getEarliest();
 
 	@ApiModelProperty(value = "The latest time of the analysis window", required = true)
-	public abstract long getLatest();
+	long getLatest();
 
 	@ApiModelProperty(value = "The filter used for the analysis", required = true)
-	public abstract String getFilter();
+	String getFilter();
 
 	@ApiModelProperty(value = "The (csv) fields to sort Tracy by", required = true)
-	public abstract String getSort();
+	String getSort();
 
 }

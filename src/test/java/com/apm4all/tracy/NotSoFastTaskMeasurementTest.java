@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.apm4all.tracy.measurement.task.TaskMeasurement;
+import com.apm4all.tracy.apimodel.TaskMeasurement;
 import com.apm4all.tracy.simulations.NotSoFastTaskMeasurement;
 
 public class NotSoFastTaskMeasurementTest {

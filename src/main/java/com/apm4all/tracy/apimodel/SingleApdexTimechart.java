@@ -1,8 +1,11 @@
-package com.apm4all.tracy.widgets.model;
+package com.apm4all.tracy.apimodel;
 
 import java.util.ArrayList;
 import java.util.List;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
+@ApiModel(description = "A timechart containing APDEX scores")
 public class SingleApdexTimechart {
 	private String application;
 	private String task;
@@ -17,6 +20,7 @@ public class SingleApdexTimechart {
 		apdexScores = new ArrayList<Double>();
 	}
 
+	@ApiModelProperty(value = "Time sequence in epoch msec", required = true)
 	public ArrayList<Long> getTimeSequence() {
 		return timeSequence;
 	}
@@ -25,6 +29,7 @@ public class SingleApdexTimechart {
 		this.timeSequence = new ArrayList<Long>(list);
 	}
 
+	@ApiModelProperty(value = "The APDEX scores", required = true)
 	public ArrayList<Double> getApdexScores() {
 		return apdexScores;
 	}
@@ -33,6 +38,7 @@ public class SingleApdexTimechart {
 		this.apdexScores = new ArrayList<Double>(apdexScores);
 	}
 
+	@ApiModelProperty(value = "The Application", required = true)
 	public String getApplication() {
 		return application;
 	}
@@ -41,6 +47,7 @@ public class SingleApdexTimechart {
 		this.application = application;
 	}
 
+	@ApiModelProperty(value = "The Task", required = true)
 	public String getTask() {
 		return task;
 	}
@@ -49,6 +56,7 @@ public class SingleApdexTimechart {
 		this.task = task;
 	}
 
+	@ApiModelProperty(value = "The Response Time Threshold unit", required = true, allowableValues = "ms,s,m,h")
 	public String getRttUnit() {
 		return rttUnit;
 	}
@@ -57,6 +65,7 @@ public class SingleApdexTimechart {
 		this.rttUnit = rttUnit;
 	}
 
+	@ApiModelProperty(value = "The Response Time Threshold - Tolerating", required = true)
 	public Integer getRttT() {
 		return rttT;
 	}
@@ -65,20 +74,13 @@ public class SingleApdexTimechart {
 		this.rttT = rttT;
 	}
 
+	@ApiModelProperty(value = "The Response time threshold - Frustrated", required = true)
 	public Integer getRttF() {
 		return rttF;
 	}
 
 	public void setRttF(Integer rttF) {
 		this.rttF = rttF;
-	}
-
-	public void setTimeSequence(ArrayList<Long> timeSequence) {
-		this.timeSequence = timeSequence;
-	}
-
-	public void setApdexScores(ArrayList<Double> apdexScores) {
-		this.apdexScores = apdexScores;
 	}
 
 	public boolean hasNoElements() {

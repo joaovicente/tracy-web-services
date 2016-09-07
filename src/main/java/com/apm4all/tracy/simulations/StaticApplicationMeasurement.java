@@ -3,12 +3,12 @@ package com.apm4all.tracy.simulations;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 
-import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
-import com.apm4all.tracy.widgets.model.MultiApdexTimechart;
-import com.apm4all.tracy.widgets.model.SingleApdexTimechart;
-import com.apm4all.tracy.widgets.model.TaskMeasurementSummary;
-import com.apm4all.tracy.widgets.model.TasksSnapMeasurementSummary;
-import com.apm4all.tracy.widgets.model.TasksSpanMeasurementSummary;
+import com.apm4all.tracy.apimodel.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.MultiApdexTimechart;
+import com.apm4all.tracy.apimodel.SingleApdexTimechart;
+import com.apm4all.tracy.apimodel.TaskMeasurementSummary;
+import com.apm4all.tracy.apimodel.TasksSnapMeasurementSummary;
+import com.apm4all.tracy.apimodel.TasksSpanMeasurementSummary;
 
 public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 	private final double APDEX_EXCELLENT = 0.99;
@@ -29,11 +29,11 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 	@Override
 	public MultiApdexTimechart getMultiApdexTimechart() {
 		MultiApdexTimechart multi = new MultiApdexTimechart();
-		multi.add(new StaticTaskMeasurement("Simulated", "StaticExcellentTask").getSingleApdexTimechart());
-		multi.add(new StaticTaskMeasurement("Simulated", "StaticGoodTask").getSingleApdexTimechart());
-		multi.add(new StaticTaskMeasurement("Simulated", "StaticFairTask").getSingleApdexTimechart());
-		multi.add(new StaticTaskMeasurement("Simulated", "StaticPoorTask").getSingleApdexTimechart());
-		multi.add(new StaticTaskMeasurement("Simulated", "StaticUnacceptableTask").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("demo-static-app", "excellent-task").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("demo-static-app", "good-task").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("demo-static-app", "fair-task").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("demo-static-app", "poor-task").getSingleApdexTimechart());
+		multi.add(new StaticTaskMeasurement("demo-static-app", "unacceptable-task").getSingleApdexTimechart());
 		return multi;
 	}
 
@@ -117,23 +117,23 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		TasksSpanMeasurementSummary tasks = new TasksSpanMeasurementSummary();
 		
 		TaskMeasurementSummary task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticExcellentTask", APDEX_EXCELLENT);
+		fillTaskSpanMeasurementSummary(task, "excellent-task", APDEX_EXCELLENT);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticGoodTask", APDEX_GOOD);
+		fillTaskSpanMeasurementSummary(task, "good-task", APDEX_GOOD);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticFairTask", APDEX_FAIR);
+		fillTaskSpanMeasurementSummary(task, "fair-task", APDEX_FAIR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSpanMeasurementSummary(task, "StaticPoorTask", APDEX_POOR);
+		fillTaskSpanMeasurementSummary(task, "poor-task", APDEX_POOR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticUnacceptableTask", APDEX_UNACCEPTABLE);
+		fillTaskSnapMeasurementSummary(task, "unacceptable-task", APDEX_UNACCEPTABLE);
 		tasks.add(task);
 		return tasks;
 	}
@@ -144,23 +144,23 @@ public class StaticApplicationMeasurement implements ApplicationMeasurement  {
 		TasksSnapMeasurementSummary tasks = new TasksSnapMeasurementSummary();
 		
 		TaskMeasurementSummary task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticExcellentTask", APDEX_EXCELLENT);
+		fillTaskSnapMeasurementSummary(task, "excellent-task", APDEX_EXCELLENT);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticGoodTask", APDEX_GOOD);
+		fillTaskSnapMeasurementSummary(task, "good-task", APDEX_GOOD);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticFairTask", APDEX_FAIR);
+		fillTaskSnapMeasurementSummary(task, "fair-task", APDEX_FAIR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticPoorTask", APDEX_POOR);
+		fillTaskSnapMeasurementSummary(task, "poor-task", APDEX_POOR);
 		tasks.add(task);
 		
 		task = new TaskMeasurementSummary();
-		fillTaskSnapMeasurementSummary(task, "StaticUnacceptableTask", APDEX_UNACCEPTABLE);
+		fillTaskSnapMeasurementSummary(task, "unacceptable-task", APDEX_UNACCEPTABLE);
 		tasks.add(task);
 		return tasks;
 	}

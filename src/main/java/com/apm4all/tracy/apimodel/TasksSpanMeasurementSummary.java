@@ -1,14 +1,19 @@
-package com.apm4all.tracy.widgets.model;
+package com.apm4all.tracy.apimodel;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.ArrayList;
 
-public class TasksSnapMeasurementSummary {
+@ApiModel(description = "Task Span measurement summary")
+public class TasksSpanMeasurementSummary {
 	private ArrayList<TaskMeasurementSummary> tasksSpanMeasurementSummary;
 	
-	public TasksSnapMeasurementSummary() {
+	public TasksSpanMeasurementSummary() {
 		tasksSpanMeasurementSummary = new ArrayList<TaskMeasurementSummary>() ;
 	}
 	
+	@ApiModelProperty(value = "Task measurement summaries", required = true)
 	public ArrayList<TaskMeasurementSummary> getTasks() {
 		return tasksSpanMeasurementSummary;
 	}
@@ -17,4 +22,3 @@ public class TasksSnapMeasurementSummary {
 		tasksSpanMeasurementSummary.add(task);
 	}
 }
-

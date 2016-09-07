@@ -1,10 +1,12 @@
-package com.apm4all.tracy.analysis.task;
+package com.apm4all.tracy.simulations;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class TaskAnalysis {
+import com.apm4all.tracy.apimodel.TaskAnalysis;
+
+public class TaskAnalysisFake implements TaskAnalysis {
 	private long earliest;
 	private long latest;
 	private String filter;
@@ -17,7 +19,7 @@ public class TaskAnalysis {
 	// tracyTasks 1-has->* tracyTask 1-has->* tracyEvents
 	private ArrayList<Object> tracyTasks;
 
-	public TaskAnalysis(String application, String task, long earliest, long latest, String filter, String sort, int limit, int offset)	{
+	public TaskAnalysisFake(String application, String task, long earliest, long latest, String filter, String sort, int limit, int offset)	{
 		// TODO: handle params: earliest, latest, filter, sort
 		this.application = application;
 		this.task = task;
@@ -31,14 +33,26 @@ public class TaskAnalysis {
 		this.tracyTasks = new ArrayList<Object>(200);
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getApplication()
+	 */
+	@Override
 	public String getApplication()	{
 		return this.application;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getTask()
+	 */
+	@Override
 	public String getTask()	{
 		return this.task;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getTracyTasksPage()
+	 */
+	@Override
 	public HashMap<String,Object> getTracyTasksPage()	{
 		//TODO: Return structure line below
 		HashMap<String,Object> tracyTasksPage = new HashMap<String,Object>();
@@ -50,12 +64,22 @@ public class TaskAnalysis {
 	
 		// Create mocked up tracyTasks
 		for (int i=0 ; i<records ; i++)	{
-			tracyTasks.add(generateTracyTask((latest-earliest)*i/limit));
+			tracyTasks.add(generateTracyTask((latest-earliest)*i/limit, i));
 		}
 		return tracyTasksPage;
 	}
 
-	private HashMap<String, Object> generateTracyTask(long timeOffset)	{
+	private int getRoughMaxTaskLatency()	{
+		int latency;
+		if (this.task.contains("excellent") )	{ latency = 176; }
+		else if (this.task.contains("good") )	{ latency = 273; }
+		else if (this.task.contains("fair") )	{ latency = 434; }
+		else if (this.task.contains("poor") )	{ latency = 548; }
+		else /*if (this.task.contains("unacceptable") )*/	{ latency = 875; }
+		return latency;
+	}
+
+	private HashMap<String, Object> generateTracyTask(long timeOffset, int sequenceNumber)	{
 		// TODO: Consider a class hierarchy for TracyTask, 
 		// tracyTasks[] 1-has->* tracyTask{} 1-has->* tracyEvents[]
 		ArrayList<Object> tracyTaskEvents = new ArrayList<Object>(20);
@@ -74,24 +98,50 @@ public class TaskAnalysis {
 //	    for (int i=0 ; i < limits.length ; i++)	{
 //	    	System.out.println(limits[i]);
 //	    }
+
 	    int ll = Integer.parseInt(limits[1]);
-//	    int ul = Integer.parseInt(limits[2]);
-	    
+	    int ul = Integer.parseInt(limits[2]);
+		if (ll==0)	{
+			// This will happen in the two scenarios below:
+			if (ul>100) {
+				// 1. User clicked on Vitals timechart (ll=0 ul=<rttF>*10)
+				ll = getRoughMaxTaskLatency();
+			}
+			else	{
+				// 2. User clicked on Latency histogram first bucket 0..N
+				ll = ul-10;
+			}
+		}
+
 	    // long offset = 10; // msecOffset
 	    // long offset = 1010; // secOffset
 	    // long offset = 61010; // minOffset
 	    long offset = 3601000L; // hourOffset
 	    
-	    if (this.task.contains("Static"))	{
-	    	// msec unit
-	    	offset = (ll/10L);
+	    if (this.application.contains("demo-static-batch") )	{
+			// hour unit
+			offset = ll*3601000L/10L;
 	    }
 	    else	{
-	    	// hour unit
-	    	offset = ll*3601000L/10L;
+			// msec unit
+			offset = (ll/10L);
 	    }
 	    
-	    String host = "ukdb807735-3.local";
+	    String host = "46.7.188.254";
+	    // Progressive frame creation
+	    for (int i=0 ; i<sequenceNumber ; i++)	{
+	    	tracyTaskEvents.add(
+	    			createTracyEvent(
+	    					"TID-ab1234-x", 
+	    					"AD24", 
+	    					"layer" + Integer.toString(i), 
+	    					"A00" + Integer.toString(i), 
+	    					timeOffset+rt+offset*5, 
+	    					timeOffset+rt+offset*7, 
+	    					offset*2, 
+	    					host, 
+	    					"layer" + Integer.toString(i)));
+	    }
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "foo", "AD24", timeOffset+rt+offset*5, timeOffset+rt+offset*7, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "4F3D", "bar", "AE5F", timeOffset+rt+offset*3, timeOffset+rt+offset*5, offset*2, host, "Service"));
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "23CF", "Http servlet", "4F3D", timeOffset+rt+offset*2, timeOffset+rt+offset*8, offset*6, host, "Service"));
@@ -99,6 +149,7 @@ public class TaskAnalysis {
 	    tracyTaskEvents.add(createTracyEvent("TID-ab1234-x", "AAAA", "Client handler", "DBF5", timeOffset+rt, timeOffset+rt+offset*10, offset*10, host, "Proxy"));
 	    tracyEvents.put("tracyEvents", tracyTaskEvents);
 	    tracyTask.put("tracyTask", tracyEvents);
+
 	    return tracyTask;
 	}
 	
@@ -125,18 +176,34 @@ public class TaskAnalysis {
 		return tracyEvent;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getEarliest()
+	 */
+	@Override
 	public long getEarliest() {
 		return earliest;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getLatest()
+	 */
+	@Override
 	public long getLatest() {
 		return latest;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getFilter()
+	 */
+	@Override
 	public String getFilter() {
 		return filter;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.apm4all.tracy.analysis.task.TaskAnalysis#getSort()
+	 */
+	@Override
 	public String getSort() {
 		return sort;
 	}

@@ -1,6 +1,6 @@
 package com.apm4all.tracy.services;
 
-import com.apm4all.tracy.measurement.application.ApplicationMeasurement;
+import com.apm4all.tracy.apimodel.ApplicationMeasurement;
 import com.apm4all.tracy.simulations.StaticApplicationMeasurement;
 
 public class ApplicationMeasurementService {
@@ -13,7 +13,7 @@ public class ApplicationMeasurementService {
      */
     public ApplicationMeasurement getApplicationMeasurement(String application) {
     	ApplicationMeasurement applicationMeasurement = null;
-    	if (application.equals("SimulatedApp"))	{
+    	if (application.equals("demo-static-app"))	{
     		applicationMeasurement = new StaticApplicationMeasurement(application);
     	}
     	return applicationMeasurement;

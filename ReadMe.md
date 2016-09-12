@@ -10,6 +10,9 @@ This service is used by Tracy Web Application (https://github.com/joaovicente/tr
      
 ## Version history
 
+### 0.2.1
+* Removed logback dependency
+
 ### 0.2.0
 * Added embedded ElasticSearch
 * Added REST endpoints for Task measurement and analysis 

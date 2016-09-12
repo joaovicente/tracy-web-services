@@ -21,7 +21,7 @@
 
   <groupId>com.apm4all.tracy</groupId>
   <artifactId>tracy-web-services</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
 
   <name>Tracy Web Services</name>
   <description>Project delivering Tracy web services</description>
@@ -31,7 +31,6 @@
 
   <properties>
     <swagger-ui.version>2.1.2</swagger-ui.version>
-    <logback-version>1.1.3</logback-version>
     <swagger.url>https://github.com/swagger-api/swagger-ui/archive</swagger.url>
     <destDir>target/swagger-ui</destDir>
   </properties>
@@ -118,16 +117,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.7.12</version>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.1.3</version>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-core</artifactId>
-      <version>1.1.3</version>
     </dependency>
 
     <!-- testing -->

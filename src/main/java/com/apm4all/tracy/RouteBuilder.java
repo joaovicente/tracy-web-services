@@ -150,7 +150,7 @@ public class RouteBuilder extends SpringRouteBuilder {
 				});
 
 		from("direct:setSimulation").routeId("setSimulation")
-	            .log("${body}")
+//	            .log("${body}")
 				.process(new Processor()	{
 					@Override
 					public void process(Exchange exchange) throws Exception {
